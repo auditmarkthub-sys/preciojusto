@@ -158,8 +158,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pro-lock p{font-size:13px;color:var(--muted);line-height:1.5}
 .pro-unlock{background:var(--amarillo);color:var(--text);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;border:none;border-radius:99px;padding:8px 18px;cursor:pointer;margin-top:10px}
 
-.tip{display:inline-block;width:13px;height:13px;background:var(--border);border-radius:50%;font-size:9px;color:var(--muted);text-align:center;line-height:13px;cursor:help;font-weight:700;position:relative}
-.tip:hover::after{content:attr(data-t);position:absolute;left:17px;top:-4px;background:var(--text);color:white;font-size:11px;font-weight:400;padding:5px 9px;border-radius:7px;z-index:999;width:200px;text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;line-height:1.4;white-space:normal}
+.tip{display:inline-block;width:16px;height:16px;background:var(--border);border-radius:50%;font-size:10px;color:var(--muted);text-align:center;line-height:16px;cursor:help;font-weight:700;position:relative}
+.tip::before{content:'';position:absolute;inset:-8px}/* área táctil ampliada */
+.tip:hover::after,.tip.open::after{content:attr(data-t);position:absolute;left:20px;top:-4px;background:var(--text);color:white;font-size:11px;font-weight:400;padding:5px 9px;border-radius:7px;z-index:999;width:200px;max-width:60vw;text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;line-height:1.4;white-space:normal}
+.tip.open{background:var(--text);color:white}
 .divider{height:1px;background:var(--border);margin:10px 0}
 .sec-lbl{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:7px;margin-top:10px}
 .tab-content{display:none}.tab-content.active{display:block}
@@ -168,8 +170,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 
 <nav class="nav">
-  <div class="logo">Precio<span class="v">Justo</span><span class="by">by Audit Smarkt Hub</span></div>
-  <button class="btn-pro">⚡ Pro · S/ 9,90</button>
+  <div class="logo">Precio<span class="v">Justo</span><span class="by">by Audit Markt Hub</span></div>
+  <button class="btn-pro" onclick="openPro()">⚡ Pro · S/ 9,90</button>
 </nav>
 
 <div class="ad-bar" id="adBar">
@@ -525,13 +527,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="pro-lock" id="proLock" style="display:none">
         <div style="font-size:26px;margin-bottom:7px">🔒</div>
         <p>Alcanzaste el límite de 3 productos gratis.<br><strong>Pro</strong> incluye historial ilimitado, exportar PDF y comparar escenarios.</p>
-        <button class="pro-unlock">⚡ Desbloquear por S/ 9,90</button>
+        <button class="pro-unlock" onclick="openPro()">⚡ Desbloquear por S/ 9,90</button>
       </div>
     </div>
   </div>
 </div>
 
 </div><!-- /cnt -->
+
+<!-- ══════ MODAL PRO ══════ -->
+<div id="proModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closePro()">
+  <div style="background:var(--white);border-radius:var(--r);max-width:340px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="font-size:30px">⚡</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-top:6px">Precio Justo <span style="color:var(--verde)">Pro</span></div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px">Pago único de <strong style="color:var(--text)">S/ 9,90</strong></div>
+    <div style="text-align:left;font-size:13px;line-height:2;margin-top:12px">
+      ✅ Productos guardados ilimitados<br>
+      ✅ Exporta tu lista de precios en PDF<br>
+      ✅ Compara escenarios de ganancia<br>
+      ✅ Sin publicidad
+    </div>
+    <div class="alert ay mt10" style="text-align:left"><span>🚧</span><span>Estamos activando los pagos. Muy pronto disponible — tus productos guardados te estarán esperando.</span></div>
+    <button class="btn btn-dk mt12" onclick="closePro()">Entendido</button>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -570,7 +589,7 @@ function goTab(id,btn){
 // ══════════════════════════════════════════════════════
 // CALCULADORA IGV
 // ══════════════════════════════════════════════════════
-let lastSub=null;
+let lastSub=null,lastTot=null;
 function igvFocus(f){
   const map={S:'',I:'ci',T:'ct'};
   ['S','I','T'].forEach(k=>{
@@ -599,13 +618,15 @@ function igvC(from){
     'El IGV de esta operación es '+fmtPEN(igv)+'. Si compraste con factura y tienes RUC, '+
     'ese IGV es crédito fiscal — no sale de tu bolsillo.';
   document.getElementById('igvAlert').style.display='flex';
-  lastSub=sub;
+  lastSub=sub;lastTot=tot;
   document.getElementById('btnUsarSub').style.display='flex';
 }
 function usarSub(){
-  if(!lastSub) return;
+  if(!lastTot) return;
   goTab('precio',document.querySelectorAll('.tab-btn')[1]);
-  document.getElementById('pLote').value=fmtN(lastSub);
+  // El campo "Costo total del lote" espera lo que pagaste CON IGV;
+  // con comprobante=factura la app le descuenta el IGV una sola vez.
+  document.getElementById('pLote').value=fmtN(lastTot);
   if(!situacion) setSit('ruc');
   setComp('factura');
   calcP();
@@ -644,7 +665,8 @@ function setSit(s){
   // Etiquetas con factura en gastos extra
   document.querySelectorAll('.gasto-cf-dyn').forEach(el=>el.style.display=esRuc?'flex':'none');
 
-  if(!esRuc){cobIgv=false;tasaIR=0;}
+  // No mutamos cobIgv/tasaIR aquí: calcP los aplica solo cuando esRuc,
+  // así las elecciones del usuario sobreviven al alternar de situación.
   calcP();
 }
 
@@ -786,10 +808,7 @@ function pctC(v){
   calcP();
 }
 function solC(){
-  const costoU=computeCostoU();
-  const soles=parse(document.getElementById('iSol').value)||0;
-  ganPct=(!isNaN(costoU)&&costoU>0)? (soles/costoU*100) : 0;
-  calcP();
+  calcP(); // calcP lee iSol directamente en modo soles y deriva ganPct
 }
 
 function setCobIgv(v){
@@ -800,16 +819,9 @@ function setCobIgv(v){
 }
 function setIR(t){
   tasaIR=t;
-  [0,1,1.5].forEach(x=>document.getElementById('ir'+String(x).replace('.','_').replace('0','0')).classList.remove('act'));
-  document.getElementById('ir'+String(t).replace('.','15').replace('10','1')).classList.add('act');
-  // Simplificado:
   document.getElementById('ir0').classList.toggle('act',t===0);
   document.getElementById('ir1').classList.toggle('act',t===1);
   document.getElementById('ir15').classList.toggle('act',t===1.5);
-  // Si hay IR → ganancia tiene dos filas
-  document.getElementById('lblGan').textContent=t>0?'Ganancia bruta':'Ganancia';
-  document.getElementById('rowIR').style.display=t>0?'grid':'none';
-  document.getElementById('rowNeta').style.display=t>0?'grid':'none';
   calcP();
 }
 
@@ -863,37 +875,48 @@ function calcP(){
     document.getElementById('ciCostoU').textContent=fmtPEN(costoU);
   }
 
-  // Ganancia
-  const ganSoles=costoU*ganPct/100;
-
-  // Actualizar displays según modo
-  document.getElementById('pctSoles').textContent='= '+fmtPEN(ganSoles);
+  // Ganancia: en modo soles manda lo que el usuario escribió;
+  // en modo % manda el porcentaje. ganPct queda siempre derivado/consistente.
+  let ganSoles;
   if(modoGan==='sol'){
+    ganSoles=parse(document.getElementById('iSol').value)||0;
+    ganPct=costoU>0? ganSoles/costoU*100 : 0;
     document.getElementById('solPct').textContent='= '+ganPct.toFixed(1)+'%';
+  } else {
+    ganSoles=costoU*ganPct/100;
   }
+  document.getElementById('pctSoles').textContent='= '+fmtPEN(ganSoles);
+
+  // IR aplica solo con RUC
+  const aplicaIR=esRuc? tasaIR : 0;
 
   // Precio sin IGV, antes de IR
   const precioBase=costoU+ganSoles;
-  // IR: para que ganancia sea real después del IR, ajustamos: precioSinIgv = precioBase / (1 - IR%)
-  const precioSinIgv=tasaIR>0? precioBase/(1-(tasaIR/100)) : precioBase;
-  const irMonto=precioSinIgv*(tasaIR/100);
-  const gananciaNeta=ganSoles-irMonto; // ganancia real después de pagar IR
+  // IR: para que la ganancia deseada quede DESPUÉS de pagar IR: precioSinIgv = precioBase / (1 - IR%)
+  const precioSinIgv=aplicaIR>0? precioBase/(1-(aplicaIR/100)) : precioBase;
+  const irMonto=precioSinIgv*(aplicaIR/100);
+  // Con el ajuste anterior: bruta = ganancia deseada + IR, neta = ganancia deseada
+  const ganBruta=ganSoles+irMonto;
 
   const igvVenta=(cobIgv&&esRuc)? precioSinIgv*0.18 : 0;
   const precioFinal=precioSinIgv+igvVenta;
 
-  // Tabla
+  // Tabla (visibilidad de filas IR vive aquí, no en setIR, para que
+  // alternar situación nunca deje filas o etiquetas desactualizadas)
+  document.getElementById('lblGan').textContent=aplicaIR>0?'Ganancia bruta':'Ganancia';
+  document.getElementById('rowIR').style.display=aplicaIR>0?'grid':'none';
+  document.getElementById('rowNeta').style.display=aplicaIR>0?'grid':'none';
   document.getElementById('tCU').textContent=fmtPEN(costoU);
   document.getElementById('tCT').textContent=fmtPEN(costoU*unid);
-  document.getElementById('tGU').textContent=fmtPEN(ganSoles);
-  document.getElementById('tGT').textContent=fmtPEN(ganSoles*unid);
+  document.getElementById('tGU').textContent=fmtPEN(aplicaIR>0?ganBruta:ganSoles);
+  document.getElementById('tGT').textContent=fmtPEN((aplicaIR>0?ganBruta:ganSoles)*unid);
 
-  if(tasaIR>0){
-    document.getElementById('irLbl').textContent='('+tasaIR+'%)';
+  if(aplicaIR>0){
+    document.getElementById('irLbl').textContent='('+aplicaIR+'%)';
     document.getElementById('tIRU').textContent=fmtPEN(irMonto);
     document.getElementById('tIRT').textContent=fmtPEN(irMonto*unid);
-    document.getElementById('tNU').textContent=fmtPEN(gananciaNeta);
-    document.getElementById('tNT').textContent=fmtPEN(gananciaNeta*unid);
+    document.getElementById('tNU').textContent=fmtPEN(ganSoles);
+    document.getElementById('tNT').textContent=fmtPEN(ganSoles*unid);
   }
 
   // Hero
@@ -942,9 +965,48 @@ function calcP(){
 }
 
 // ══════════════════════════════════════════════════════
-// GUARDAR
+// GUARDAR + PERSISTENCIA (localStorage)
 // ══════════════════════════════════════════════════════
-let savedCount=0;
+const LIMITE_GRATIS=3;
+let productos=[];
+
+function loadProductos(){
+  try{ productos=JSON.parse(localStorage.getItem('pj_productos')||'[]'); }
+  catch(e){ productos=[]; }
+  if(!Array.isArray(productos)) productos=[];
+  renderProductos();
+}
+function persistProductos(){
+  try{ localStorage.setItem('pj_productos',JSON.stringify(productos)); }catch(e){}
+}
+function renderProductos(){
+  const list=document.getElementById('histList');
+  list.innerHTML='';
+  if(!productos.length){
+    const empty=document.createElement('div');
+    empty.className='hist-empty';
+    empty.innerHTML='Aún no tienes productos guardados.<br>Calcula tu primer precio y guárdalo. 👆';
+    list.appendChild(empty);
+  } else {
+    productos.forEach(p=>{
+      // DOM construido con textContent: el nombre es input del usuario
+      const it=document.createElement('div');
+      it.className='hist-item';
+      const info=document.createElement('div');
+      const nm=document.createElement('div');
+      nm.className='hist-nm'; nm.textContent=p.nom;
+      const dt=document.createElement('div');
+      dt.className='hist-dt'; dt.textContent=p.detalle;
+      info.appendChild(nm); info.appendChild(dt);
+      const pr=document.createElement('div');
+      pr.className='hist-price'; pr.textContent=p.precio;
+      it.appendChild(info); it.appendChild(pr);
+      list.appendChild(it);
+    });
+  }
+  document.getElementById('proLock').style.display=productos.length>=LIMITE_GRATIS?'block':'none';
+}
+
 function guardar(){
   const nomEl=document.getElementById('pNom');
   const nom=(nomEl.value||'').trim();
@@ -955,36 +1017,32 @@ function guardar(){
     setTimeout(()=>{nomEl.style.borderColor='';nomEl.placeholder='Ej: Pollo entero x50, Jabón Marsella x24';},2500);
     return;
   }
-  if(savedCount>=3){
+  if(productos.length>=LIMITE_GRATIS){
     document.getElementById('proLock').style.display='block';
     goTab('hist',document.querySelectorAll('.tab-btn')[2]);
     return;
   }
 
+  // Mismo cálculo y mismas reglas que calcP (IR/IGV solo con RUC)
   const costoU=computeCostoU();
-  const ganSoles=costoU*ganPct/100;
-  const precioBase=costoU+ganSoles;
   const esRuc=(situacion==='ruc');
-  const precioSinIgv=tasaIR>0? precioBase/(1-(tasaIR/100)) : precioBase;
+  const aplicaIR=esRuc? tasaIR : 0;
+  const ganSoles=modoGan==='sol'? (parse(document.getElementById('iSol').value)||0) : costoU*ganPct/100;
+  const precioBase=costoU+ganSoles;
+  const precioSinIgv=aplicaIR>0? precioBase/(1-(aplicaIR/100)) : precioBase;
   const igvVenta=(cobIgv&&esRuc)? precioSinIgv*.18 : 0;
   const precioFinal=precioSinIgv+igvVenta;
   const unid=getUnid();
-  const irLabel=tasaIR>0?' · IR '+tasaIR+'%':'';
+  const irLabel=aplicaIR>0?' · IR '+aplicaIR+'%':'';
+  const fecha=new Date().toLocaleDateString('es-PE',{day:'numeric',month:'short'});
 
-  savedCount++;
-  const list=document.getElementById('histList');
-  if(list.querySelector('.hist-empty')) list.innerHTML='';
-  const it=document.createElement('div');
-  it.className='hist-item';
-  it.innerHTML=`
-    <div>
-      <div class="hist-nm">${nom}</div>
-      <div class="hist-dt">${unid} uds · margen ${ganPct.toFixed(0)}% · ${(situacion||'').toUpperCase()}${irLabel}</div>
-    </div>
-    <div class="hist-price">${fmtPEN(precioFinal)}</div>
-  `;
-  list.appendChild(it);
-  if(savedCount>=3) document.getElementById('proLock').style.display='block';
+  productos.push({
+    nom:nom,
+    detalle:unid+' uds · margen '+ganPct.toFixed(0)+'% · '+(situacion||'').toUpperCase()+irLabel+' · '+fecha,
+    precio:fmtPEN(precioFinal)
+  });
+  persistProductos();
+  renderProductos();
 
   const btn=document.getElementById('btnGuardar');
   btn.textContent='✅ ¡Guardado!';
@@ -992,6 +1050,23 @@ function guardar(){
   setTimeout(()=>{btn.innerHTML='💾 Guardar en Mis productos';btn.style.background='';},1800);
   goTab('hist',document.querySelectorAll('.tab-btn')[2]);
 }
+
+loadProductos();
+
+// ══════════════════════════════════════════════════════
+// MODAL PRO
+// ══════════════════════════════════════════════════════
+function openPro(){ document.getElementById('proModal').style.display='flex'; }
+function closePro(){ document.getElementById('proModal').style.display='none'; }
+
+// ══════════════════════════════════════════════════════
+// TOOLTIPS TÁCTILES (en celular no existe :hover)
+// ══════════════════════════════════════════════════════
+document.addEventListener('click',function(e){
+  const t=e.target.closest('.tip');
+  document.querySelectorAll('.tip.open').forEach(x=>{ if(x!==t) x.classList.remove('open'); });
+  if(t) t.classList.toggle('open');
+});
 </script>
 </body>
 </html>

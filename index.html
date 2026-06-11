@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Precio Justo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --verde:#00C37A;--verde-dark:#009B61;--verde-light:#E6FFF5;
+  --amarillo:#FFD600;--rojo:#FF4545;--rojo-light:#FFF0F0;
+  --naranja:#FF9500;--naranja-light:#FFF5E6;
+  --azul:#185FA5;--azul-light:#E8F0FF;
+  --bg:#F7F6F2;--white:#FFFFFF;--text:#1A1A1A;--muted:#7A7A6E;
+  --border:#E5E4DE;--shadow:0 2px 16px rgba(0,0,0,.07);
+  --r:18px;--rs:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.nav{background:var(--white);border-bottom:1.5px solid var(--border);padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:baseline;gap:4px}
+.logo .v{color:var(--verde)}
+.logo .by{font-size:10px;font-weight:400;color:var(--muted);font-family:'DM Sans',sans-serif;margin-left:3px}
+.btn-pro{background:var(--amarillo);color:var(--text);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;border:none;border-radius:99px;padding:6px 14px;cursor:pointer}
+
+.ad-bar{background:#FFFDE7;border-bottom:1px solid #FFE082;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#7A6000}
+.ad-bar strong{color:#5A4600}
+.ad-x{background:none;border:none;color:#9A8000;font-size:18px;cursor:pointer;padding:0 2px}
+
+.tabs-bar{background:var(--white);border-bottom:1.5px solid var(--border);display:flex;padding:0 14px;overflow-x:auto}
+.tab-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);background:none;border:none;border-bottom:2.5px solid transparent;padding:11px 13px 9px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tab-btn.act{color:var(--verde-dark);border-bottom-color:var(--verde)}
+
+.cnt{max-width:480px;margin:0 auto;padding:16px 14px 48px}
+
+.panel{background:var(--white);border-radius:var(--r);border:1.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}
+.phdr{padding:14px 16px 0;display:flex;align-items:center;gap:10px}
+.picon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ig{background:var(--verde-light)}.ib{background:var(--azul-light)}.iy{background:#FFFDE7}
+.ptit{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text)}
+.psub{font-size:11px;color:var(--muted);margin-top:1px}
+.pbdy{padding:12px 16px 16px}
+
+/* IGV 3 campos */
+.igv3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.igv3-col{display:flex;flex-direction:column;gap:4px}
+.igv3-lbl{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center}
+.igv3-lbl.og{color:var(--naranja)}.igv3-lbl.gn{color:var(--verde-dark)}
+.igv3-wr{position:relative}
+.igv3-cur{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--muted);pointer-events:none}
+.igv3-in{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 7px 10px 23px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);background:var(--white);outline:none;transition:border-color .15s,background .15s;text-align:right}
+.igv3-in:focus{border-color:var(--verde);background:var(--verde-light)}
+.igv3-in.ci{background:var(--naranja-light);color:var(--naranja);border-color:#FFD0A0}
+.igv3-in.ct{background:var(--verde-light);color:var(--verde-dark);border-color:#A0E8C8}
+
+/* Alerts */
+.alert{border-radius:var(--rs);padding:9px 11px;font-size:12px;display:flex;gap:7px;align-items:flex-start;line-height:1.5}
+.ag{background:var(--verde-light);color:var(--verde-dark)}
+.ay{background:#FFFDE7;color:#7A6000}
+.ar{background:var(--rojo-light);color:#CC2222}
+.ab{background:var(--azul-light);color:var(--azul)}
+.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}
+
+/* Botones */
+.btn{width:100%;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;border:none;border-radius:var(--rs);padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.btn-dk{background:var(--text);color:white}.btn-dk:hover{background:#333}
+.btn-gn{background:var(--verde);color:white}.btn-gn:hover{background:var(--verde-dark)}
+.btn-sm{font-size:12px;padding:7px 12px;width:auto;border-radius:99px}
+
+/* Situacion */
+.sit-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sit-opt{border:1.5px solid var(--border);border-radius:var(--rs);padding:11px 10px;cursor:pointer;text-align:center;background:var(--bg);transition:all .15s}
+.sit-opt:hover{border-color:var(--verde)}
+.sit-opt.sel{border-color:var(--verde);background:var(--verde-light)}
+.sem{font-size:19px;display:block;margin-bottom:3px}
+.snm{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--text);display:block}
+.sds{font-size:10px;color:var(--muted);display:block;margin-top:1px;line-height:1.3}
+.sit-opt.sel .snm{color:var(--verde-dark)}
+
+/* Toggle */
+.tog{display:flex;background:var(--bg);border-radius:99px;padding:3px}
+.togb{flex:1;border:none;background:none;border-radius:99px;padding:7px 8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.togb.act{background:var(--white);color:var(--verde-dark);box-shadow:0 1px 5px rgba(0,0,0,.1)}
+
+/* Campos */
+.field{margin-bottom:10px}
+.fl{font-size:10px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.iw{position:relative;display:flex;align-items:center}
+.pfx{position:absolute;left:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--muted);pointer-events:none}
+.sfx{position:absolute;right:10px;font-size:12px;color:var(--muted);pointer-events:none}
+.inp{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 12px 10px 27px;font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text);background:var(--white);outline:none;transition:border-color .15s}
+.inp:focus{border-color:var(--verde)}
+.inp.np{padding-left:12px;padding-right:34px}
+.inp.nf{font-family:'DM Sans',sans-serif;font-weight:400;font-size:14px;padding-left:30px}
+.inp-pair{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center}
+.pair-res{background:var(--bg);border-radius:var(--rs);padding:10px 10px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--verde-dark);border:1.5px solid var(--border);min-width:82px;text-align:center;white-space:nowrap;height:100%}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* Costo real box */
+.costo-box{background:var(--bg);border-radius:var(--rs);padding:10px 13px;margin-top:9px}
+.cb-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed var(--border)}
+.cb-row:last-child{border-bottom:none}
+.cb-lbl{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.cb-val{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text)}
+.cb-val.gn{color:var(--verde-dark)}.cb-val.og{color:var(--naranja)}.cb-val.bl{color:var(--azul)}.cb-val.rd{color:var(--rojo)}
+
+/* Gastos sección */
+.gastos-chk-row{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer}
+.chk-box{width:18px;height:18px;border:1.5px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;background:var(--white);flex-shrink:0;font-size:12px;transition:all .15s;cursor:pointer}
+.chk-box.chked{background:var(--verde);border-color:var(--verde);color:white}
+.gastos-chk-lbl{font-size:13px;font-weight:500;color:var(--text)}
+.gastos-body{background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-top:6px}
+.gasto-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.gasto-row:last-of-type{margin-bottom:0}
+.gasto-nm{flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--white);outline:none}
+.gasto-nm:focus{border-color:var(--verde)}
+.gasto-amt{width:90px;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 8px 8px 22px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text);background:var(--white);outline:none;position:relative}
+.gasto-amt:focus{border-color:var(--verde)}
+.gasto-amt-wr{position:relative;width:90px;flex-shrink:0}
+.gasto-s{position:absolute;left:7px;top:50%;transform:translateY(-50%);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--muted);pointer-events:none}
+.gasto-cf{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.gasto-cf input{cursor:pointer;accent-color:var(--verde)}
+.gasto-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px;flex-shrink:0}
+.gasto-rm:hover{color:var(--rojo)}
+.btn-add-gasto{display:flex;align-items:center;gap:5px;background:none;border:1.5px dashed var(--border);border-radius:var(--rs);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;width:100%;justify-content:center;margin-top:8px;transition:all .15s}
+.btn-add-gasto:hover{border-color:var(--verde);color:var(--verde-dark)}
+
+/* Tabla resultados */
+.res-table{background:var(--bg);border-radius:var(--rs);overflow:hidden}
+.res-thead{display:grid;grid-template-columns:1.4fr 1fr 1fr;background:rgba(0,0,0,.05);padding:5px 10px}
+.res-th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);text-align:right}
+.res-th:first-child{text-align:left}
+.res-tr{display:grid;grid-template-columns:1.4fr 1fr 1fr;padding:7px 10px;border-bottom:1px dashed var(--border);align-items:center}
+.res-tr:last-child{border-bottom:none}
+.res-tr.neta{background:rgba(0,195,122,.07);border-top:1.5px solid #b2ecd5;border-bottom:none}
+.res-tc{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text);text-align:right}
+.res-tc:first-child{font-family:'DM Sans',sans-serif;font-weight:400;font-size:12px;color:var(--muted);text-align:left;display:flex;align-items:center;gap:3px}
+.res-tc.gn{color:var(--verde-dark)}.res-tc.rd{color:var(--rojo)}.res-tc.og{color:var(--naranja)}
+.res-tr.neta .res-tc{font-weight:800;font-size:14px}
+
+/* Hero precio */
+.hero{background:var(--verde);border-radius:var(--rs);padding:14px 16px;margin-top:11px;text-align:center}
+.hero .hlbl{font-size:12px;color:rgba(255,255,255,.85);font-weight:500;line-height:1.4}
+.hero .hsub{font-size:10px;color:rgba(255,255,255,.65);margin-top:3px}
+.hero .hval{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:white;line-height:1.1;margin-top:7px;word-break:keep-all;white-space:nowrap}
+
+/* Historial */
+.hist-empty{text-align:center;padding:26px;color:var(--muted);font-size:14px;line-height:1.6}
+.hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.hist-item:last-child{border-bottom:none}
+.hist-nm{font-weight:500;font-size:14px}
+.hist-dt{font-size:11px;color:var(--muted);margin-top:2px}
+.hist-price{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--verde-dark)}
+
+.pro-lock{background:var(--bg);border:1.5px dashed var(--border);border-radius:var(--rs);padding:18px;text-align:center;margin-top:10px}
+.pro-lock p{font-size:13px;color:var(--muted);line-height:1.5}
+.pro-unlock{background:var(--amarillo);color:var(--text);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;border:none;border-radius:99px;padding:8px 18px;cursor:pointer;margin-top:10px}
+
+.tip{display:inline-block;width:13px;height:13px;background:var(--border);border-radius:50%;font-size:9px;color:var(--muted);text-align:center;line-height:13px;cursor:help;font-weight:700;position:relative}
+.tip:hover::after{content:attr(data-t);position:absolute;left:17px;top:-4px;background:var(--text);color:white;font-size:11px;font-weight:400;padding:5px 9px;border-radius:7px;z-index:999;width:200px;text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;line-height:1.4;white-space:normal}
+.divider{height:1px;background:var(--border);margin:10px 0}
+.sec-lbl{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:7px;margin-top:10px}
+.tab-content{display:none}.tab-content.active{display:block}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">Precio<span class="v">Justo</span><span class="by">by Audit Smarkt Hub</span></div>
+  <button class="btn-pro">⚡ Pro · S/ 9,90</button>
+</nav>
+
+<div class="ad-bar" id="adBar">
+  <span>📢 <strong>Publicidad:</strong> Caja Huancayo — Crédito para tu negocio desde 12% anual</span>
+  <button class="ad-x" onclick="this.parentElement.style.display='none'">×</button>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn act" onclick="goTab('igv',this)">Calculadora IGV</button>
+  <button class="tab-btn" onclick="goTab('precio',this)">Precio de venta</button>
+  <button class="tab-btn" onclick="goTab('hist',this)">Mis productos</button>
+</div>
+
+<div class="cnt">
+
+<!-- ══════ IGV ══════ -->
+<div id="tab-igv" class="tab-content active">
+  <div class="panel">
+    <div class="phdr">
+      <div class="picon ig">🧮</div>
+      <div><div class="ptit">Calculadora de IGV</div><div class="psub">Escribe en cualquier campo — los demás se calculan solos</div></div>
+    </div>
+    <div class="pbdy">
+      <div class="igv3">
+        <div class="igv3-col">
+          <div class="igv3-lbl">Subtotal</div>
+          <div class="igv3-wr"><span class="igv3-cur">S/</span>
+            <input class="igv3-in" id="iS" type="text" inputmode="decimal" placeholder="0,00" onfocus="igvFocus('S')" oninput="igvC('S')">
+          </div>
+        </div>
+        <div class="igv3-col">
+          <div class="igv3-lbl og">IGV 18%</div>
+          <div class="igv3-wr"><span class="igv3-cur">S/</span>
+            <input class="igv3-in ci" id="iI" type="text" inputmode="decimal" placeholder="0,00" onfocus="igvFocus('I')" oninput="igvC('I')">
+          </div>
+        </div>
+        <div class="igv3-col">
+          <div class="igv3-lbl gn">Total</div>
+          <div class="igv3-wr"><span class="igv3-cur">S/</span>
+            <input class="igv3-in ct" id="iT" type="text" inputmode="decimal" placeholder="0,00" onfocus="igvFocus('T')" oninput="igvC('T')">
+          </div>
+        </div>
+      </div>
+      <div id="igvAlert" class="alert ag mt8" style="display:none">
+        <span>💡</span><span id="igvTxt"></span>
+      </div>
+      <button class="btn btn-dk mt10" id="btnUsarSub" style="display:none" onclick="usarSub()">
+        → Usar este subtotal en Precio de venta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PRECIO ══════ -->
+<div id="tab-precio" class="tab-content">
+
+  <!-- PASO 1 -->
+  <div class="panel">
+    <div class="phdr">
+      <div class="picon ib">👤</div>
+      <div><div class="ptit">Paso 1 — ¿Cuál es tu situación?</div><div class="psub">Esto cambia cómo calculamos tu costo e impuestos</div></div>
+    </div>
+    <div class="pbdy">
+      <div class="sit-grid">
+        <div class="sit-opt" id="sit-inf" onclick="setSit('inf')">
+          <span class="sem">🛒</span>
+          <span class="snm">Sin RUC / Nuevo RUS</span>
+          <span class="sds">Vendo sin factura ni régimen formal</span>
+        </div>
+        <div class="sit-opt" id="sit-ruc" onclick="setSit('ruc')">
+          <span class="sem">🏢</span>
+          <span class="snm">Con RUC</span>
+          <span class="sds">RER, RMT o Régimen General</span>
+        </div>
+      </div>
+      <div id="sitMsg" class="alert ag" style="display:none;margin-top:10px">
+        <span>ℹ️</span><span id="sitTxt"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2 -->
+  <div class="panel">
+    <div class="phdr">
+      <div class="picon ig">📦</div>
+      <div><div class="ptit">Paso 2 — Tu compra</div><div class="psub">¿Cómo compraste y qué vendes?</div></div>
+    </div>
+    <div class="pbdy">
+
+      <!-- Nombre -->
+      <div class="field">
+        <label class="fl">Nombre del producto</label>
+        <div class="iw"><span class="pfx" style="font-size:13px">📦</span>
+          <input class="inp nf" id="pNom" type="text" placeholder="Ej: Pollo entero x50, Jabón Marsella x24">
+        </div>
+      </div>
+
+      <!-- Comprobante (solo ruc) -->
+      <div id="comprobWrap">
+        <div class="sec-lbl" style="margin-top:0">Comprobante de compra</div>
+        <div class="tog" style="margin-bottom:11px">
+          <button class="togb act" id="cF" onclick="setComp('factura')">Con factura</button>
+          <button class="togb" id="cB" onclick="setComp('boleta')">Con boleta</button>
+          <button class="togb" id="cS" onclick="setComp('sin')">Sin comprobante</button>
+        </div>
+      </div>
+
+      <!-- Tipo producto -->
+      <div class="sec-lbl" style="margin-top:0" id="tipoLbl">¿Cómo se compra / mide?</div>
+      <div class="tog" style="margin-bottom:11px">
+        <button class="togb act" id="tU" onclick="setTipo('und')">Por unidad</button>
+        <button class="togb" id="tK" onclick="setTipo('kg')">Por peso / kilo</button>
+      </div>
+
+      <!-- Por unidad -->
+      <div id="mUnd">
+        <div class="two-col">
+          <div class="field" style="margin-bottom:0">
+            <label class="fl">Costo total del lote <span class="tip" data-t="Lo que pagaste en total">?</span></label>
+            <div class="iw"><span class="pfx">S/</span>
+              <input class="inp" id="pLote" type="text" inputmode="decimal" placeholder="0,00" oninput="calcP()">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="fl">Cantidad de unidades</label>
+            <div class="iw"><span class="pfx" style="font-size:12px">#</span>
+              <input class="inp" id="pUnid" type="text" inputmode="numeric" placeholder="24" oninput="calcP()" style="padding-left:24px">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Por peso -->
+      <div id="mKg" style="display:none">
+        <div class="alert ab" style="margin-bottom:9px">
+          <span>📐</span><span>Ingresa cantidad, peso por unidad y precio por kilo — calculamos el costo total.</span>
+        </div>
+        <div class="three-col">
+          <div class="field" style="margin-bottom:0">
+            <label class="fl"># Unidades</label>
+            <div class="iw"><span class="pfx" style="font-size:11px">#</span>
+              <input class="inp" id="kUnd" type="text" inputmode="numeric" placeholder="50" oninput="calcKg()" style="padding-left:22px">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="fl">Kg / unidad</label>
+            <div class="iw"><span class="pfx" style="font-size:11px">kg</span>
+              <input class="inp" id="kPeso" type="text" inputmode="decimal" placeholder="2,8" oninput="calcKg()" style="padding-left:28px">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="fl">S/ por kilo</label>
+            <div class="iw"><span class="pfx">S/</span>
+              <input class="inp" id="kPxkg" type="text" inputmode="decimal" placeholder="5,50" oninput="calcKg()">
+            </div>
+          </div>
+        </div>
+        <div id="kgRes" style="display:none;background:var(--verde-light);border:1.5px solid #A0E8C8;border-radius:var(--rs);padding:9px 12px;display:none;justify-content:space-between;align-items:center;margin-top:8px">
+          <span style="font-size:12px;color:var(--verde-dark)">Peso total: <strong id="kgTkg">—</strong> · Costo total:</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--verde-dark)" id="kgCT">S/ —</span>
+        </div>
+      </div>
+
+      <!-- Costo real -->
+      <div id="costoBox" style="display:none">
+        <!-- Para inf: solo costo unitario -->
+        <div id="costoInf" class="costo-box">
+          <div class="cb-row">
+            <span class="cb-lbl">Costo real por unidad</span>
+            <span class="cb-val bl" id="ciCostoU">—</span>
+          </div>
+        </div>
+        <!-- Para ruc: subtotal / igv / total pagado -->
+        <div id="costoRuc" class="costo-box">
+          <div class="cb-row">
+            <span class="cb-lbl">Total pagado por unidad <span class="tip" data-t="Lo que desembolsaste incluyendo el IGV">?</span></span>
+            <span class="cb-val" id="crTotal">—</span>
+          </div>
+          <div class="cb-row" id="crIgvRow">
+            <span class="cb-lbl">IGV 18% <span class="tip" data-t="Si compraste con factura, este IGV es crédito fiscal — lo recuperas descontándolo del IGV que cobras en tus ventas">?</span></span>
+            <span class="cb-val og" id="crIgv">—</span>
+          </div>
+          <div class="cb-row" id="crSubRow">
+            <span class="cb-lbl">Subtotal (tu costo real) <span class="tip" data-t="La base imponible — lo que realmente sale de tu ganancia">?</span></span>
+            <span class="cb-val gn" id="crSub">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gastos adicionales -->
+      <div class="divider"></div>
+      <div class="gastos-chk-row" onclick="toggleGastos()">
+        <div class="chk-box" id="chkGastos">✓</div>
+        <span class="gastos-chk-lbl">Agregar gastos adicionales</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:auto">(flete, merma, otros)</span>
+      </div>
+      <div id="gastosBody" class="gastos-body" style="display:none">
+        <!-- Flete fijo -->
+        <div class="gasto-row" id="rowFlete">
+          <span style="font-size:12px;color:var(--muted);width:80px;flex-shrink:0">Flete</span>
+          <div class="gasto-amt-wr"><span class="gasto-s">S/</span>
+            <input class="gasto-amt" id="gFlete" type="text" inputmode="decimal" placeholder="0,00" oninput="calcP()">
+          </div>
+          <label class="gasto-cf" id="gFleteLabel" style="display:none">
+            <input type="checkbox" id="gFleteF" onchange="calcP()"> Con factura
+          </label>
+        </div>
+        <!-- Merma fijo -->
+        <div class="gasto-row">
+          <span style="font-size:12px;color:var(--muted);width:80px;flex-shrink:0">Merma <span class="tip" data-t="Pérdida estimada en soles: unidades dañadas, vencidas o que no podrás vender">?</span></span>
+          <div class="gasto-amt-wr"><span class="gasto-s">S/</span>
+            <input class="gasto-amt" id="gMerma" type="text" inputmode="decimal" placeholder="0,00" oninput="calcP()">
+          </div>
+        </div>
+        <!-- Filas dinámicas -->
+        <div id="gastosExtra"></div>
+        <button class="btn-add-gasto" onclick="addGasto()">＋ Agregar otro gasto</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PASO 3 -->
+  <div class="panel">
+    <div class="phdr">
+      <div class="picon iy">💰</div>
+      <div><div class="ptit">Paso 3 — Tu ganancia e impuestos</div><div class="psub">¿Cuánto quieres ganar?</div></div>
+    </div>
+    <div class="pbdy">
+
+      <!-- Modo ganancia -->
+      <div class="sec-lbl" style="margin-top:0">¿Cómo ingresas tu ganancia?</div>
+      <div class="tog" style="margin-bottom:11px">
+        <button class="togb act" id="mP" onclick="setModo('pct')">En porcentaje (%)</button>
+        <button class="togb" id="mS" onclick="setModo('sol')">En soles (S/)</button>
+      </div>
+
+      <!-- Modo % -->
+      <div id="gPct">
+        <label class="fl">Margen de ganancia</label>
+        <input type="range" id="slider" min="1" max="150" value="35" oninput="sliderC(this.value)"
+          style="width:100%;accent-color:var(--verde);height:5px;cursor:pointer;display:block;margin-bottom:5px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:9px">
+          <span>1%</span><span>50%</span><span>100%</span><span>150%</span>
+        </div>
+        <div class="inp-pair">
+          <div class="iw">
+            <input class="inp np" id="iPct" type="text" inputmode="decimal" value="35" placeholder="35"
+              oninput="pctC(this.value)" style="padding-right:28px">
+            <span class="sfx">%</span>
+          </div>
+          <div class="pair-res" id="pctSoles">= S/ —</div>
+        </div>
+      </div>
+
+      <!-- Modo S/ -->
+      <div id="gSol" style="display:none">
+        <label class="fl">Ganancia deseada por unidad</label>
+        <div class="inp-pair">
+          <div class="iw"><span class="pfx">S/</span>
+            <input class="inp" id="iSol" type="text" inputmode="decimal" placeholder="0,00" oninput="solC()">
+          </div>
+          <div class="pair-res" id="solPct">= —%</div>
+        </div>
+      </div>
+
+      <!-- IR (solo ruc) -->
+      <div id="irWrap" style="display:none">
+        <div class="divider"></div>
+        <div class="sec-lbl">Impuesto a la Renta — pago a cuenta mensual</div>
+        <div class="alert ab" style="margin-bottom:9px;font-size:12px">
+          <span>📌</span><span>El IR se aplica sobre el subtotal de tus ventas. Lo incluimos en el precio para que tu ganancia sea real después de pagarlo a SUNAT.</span>
+        </div>
+        <div class="tog">
+          <button class="togb act" id="ir0" onclick="setIR(0)">No aplica</button>
+          <button class="togb" id="ir1" onclick="setIR(1)">RMT · 1%</button>
+          <button class="togb" id="ir15" onclick="setIR(1.5)">RER / RG · 1,5%</button>
+        </div>
+      </div>
+
+      <!-- IGV venta (solo ruc) -->
+      <div id="igvVentaWrap" style="display:none">
+        <div class="divider"></div>
+        <div class="sec-lbl">¿Cobras IGV en tu precio de venta?</div>
+        <div class="tog">
+          <button class="togb act" id="bSI" onclick="setCobIgv(true)">Sí cobro IGV (emito factura)</button>
+          <button class="togb" id="bNI" onclick="setCobIgv(false)">No cobro IGV</button>
+        </div>
+      </div>
+
+      <!-- Resultados -->
+      <div id="resultBox" style="display:none;margin-top:13px">
+        <div class="res-table">
+          <div class="res-thead">
+            <span class="res-th" style="text-align:left">Concepto</span>
+            <span class="res-th">Por unidad</span>
+            <span class="res-th">Total lote</span>
+          </div>
+          <div class="res-tr">
+            <span class="res-tc">Costo real</span>
+            <span class="res-tc" id="tCU">—</span>
+            <span class="res-tc" id="tCT">—</span>
+          </div>
+          <!-- Ganancia: si hay IR = "Ganancia bruta", si no = "Ganancia" -->
+          <div class="res-tr" id="rowGan">
+            <span class="res-tc" id="lblGan">Ganancia</span>
+            <span class="res-tc gn" id="tGU">—</span>
+            <span class="res-tc gn" id="tGT">—</span>
+          </div>
+          <!-- IR (solo si tasaIR > 0) -->
+          <div class="res-tr" id="rowIR" style="display:none">
+            <span class="res-tc">IR pago a cuenta <span id="irLbl" style="font-size:10px;color:var(--rojo)"></span> <span class="tip" data-t="Lo paga tu negocio a SUNAT mensualmente sobre tus ventas.">?</span></span>
+            <span class="res-tc rd" id="tIRU">—</span>
+            <span class="res-tc rd" id="tIRT">—</span>
+          </div>
+          <!-- Ganancia neta (solo si tasaIR > 0) -->
+          <div class="res-tr neta" id="rowNeta" style="display:none">
+            <span class="res-tc">Ganancia neta</span>
+            <span class="res-tc gn" id="tNU">—</span>
+            <span class="res-tc gn" id="tNT">—</span>
+          </div>
+        </div>
+
+        <div class="hero">
+          <div class="hlbl" id="heroLbl">Precio unitario de venta recomendado</div>
+          <div class="hsub" id="heroSub"></div>
+          <div class="hval" id="heroVal">S/ —</div>
+        </div>
+
+        <div id="alertRes" class="alert mt8" style="display:none">
+          <span id="alertIco">💡</span><span id="alertTxt"></span>
+        </div>
+
+        <button class="btn btn-gn mt12" id="btnGuardar" onclick="guardar()">💾 Guardar en Mis productos</button>
+      </div>
+
+      <div id="espera" class="alert ay" style="margin-top:8px">
+        <span>👆</span><span>Completa los pasos anteriores para ver el resultado</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════ HISTORIAL ══════ -->
+<div id="tab-hist" class="tab-content">
+  <div class="panel">
+    <div class="phdr"><div class="picon ig">📋</div>
+      <div><div class="ptit">Mis productos guardados</div><div class="psub">Plan gratis: hasta 3 productos</div></div>
+    </div>
+    <div class="pbdy">
+      <div id="histList"><div class="hist-empty">Aún no tienes productos guardados.<br>Calcula tu primer precio y guárdalo. 👆</div></div>
+      <div class="pro-lock" id="proLock" style="display:none">
+        <div style="font-size:26px;margin-bottom:7px">🔒</div>
+        <p>Alcanzaste el límite de 3 productos gratis.<br><strong>Pro</strong> incluye historial ilimitado, exportar PDF y comparar escenarios.</p>
+        <button class="pro-unlock">⚡ Desbloquear por S/ 9,90</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /cnt -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function fmtN(n){
+  if(isNaN(n)||n===null) return '';
+  const p=Math.abs(n).toFixed(2).split('.');
+  p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  return (n<0?'-':'')+p[0]+','+p[1];
+}
+function fmtPEN(n){
+  if(isNaN(n)||n===null) return '—';
+  return 'S/ '+fmtN(n);
+}
+function fmtKg(n){ return isNaN(n)?'—':fmtN(n)+' kg'; }
+function parse(s){
+  if(s===undefined||s===null||s==='') return NaN;
+  let v=String(s).replace(/\s/g,'');
+  const hC=v.includes(','),hD=v.includes('.');
+  if(hC&&hD){ v=v.lastIndexOf(',')>v.lastIndexOf('.')?v.replace(/\./g,'').replace(',','.'):v.replace(/,/g,''); }
+  else if(hC){ v=v.replace(',','.'); }
+  return parseFloat(v);
+}
+
+// ══════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════
+function goTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('act');
+}
+
+// ══════════════════════════════════════════════════════
+// CALCULADORA IGV
+// ══════════════════════════════════════════════════════
+let lastSub=null;
+function igvFocus(f){
+  const map={S:'',I:'ci',T:'ct'};
+  ['S','I','T'].forEach(k=>{
+    const el=document.getElementById('i'+k);
+    el.className='igv3-in';
+    if(k!==f&&map[k]) el.classList.add(map[k]);
+  });
+}
+function igvC(from){
+  const v=parse(document.getElementById('i'+from).value);
+  const eS=document.getElementById('iS'),eI=document.getElementById('iI'),eT=document.getElementById('iT');
+  if(isNaN(v)||v<0){
+    if(from!=='S')eS.value=''; if(from!=='I')eI.value=''; if(from!=='T')eT.value='';
+    document.getElementById('igvAlert').style.display='none';
+    document.getElementById('btnUsarSub').style.display='none';
+    return;
+  }
+  let sub,igv,tot;
+  if(from==='S'){sub=v;igv=sub*.18;tot=sub+igv;}
+  else if(from==='I'){igv=v;sub=igv/.18;tot=sub+igv;}
+  else{tot=v;sub=tot/1.18;igv=tot-sub;}
+  if(from!=='S')eS.value=fmtN(sub);
+  if(from!=='I')eI.value=fmtN(igv);
+  if(from!=='T')eT.value=fmtN(tot);
+  document.getElementById('igvTxt').textContent=
+    'El IGV de esta operación es '+fmtPEN(igv)+'. Si compraste con factura y tienes RUC, '+
+    'ese IGV es crédito fiscal — no sale de tu bolsillo.';
+  document.getElementById('igvAlert').style.display='flex';
+  lastSub=sub;
+  document.getElementById('btnUsarSub').style.display='flex';
+}
+function usarSub(){
+  if(!lastSub) return;
+  goTab('precio',document.querySelectorAll('.tab-btn')[1]);
+  document.getElementById('pLote').value=fmtN(lastSub);
+  if(!situacion) setSit('ruc');
+  setComp('factura');
+  calcP();
+}
+
+// ══════════════════════════════════════════════════════
+// STATE PRECIO
+// ══════════════════════════════════════════════════════
+let situacion=null, comprobante='factura', tipoProd='und';
+let modoGan='pct', ganPct=35, cobIgv=true, tasaIR=0;
+let gastosVisible=false, gastoRows=[], gastoIdCnt=0;
+
+const sitMsgs={
+  inf:'Cuando compras productos, el precio que pagas ya incluye IGV (18%). Como vendes sin RUC, ese IGV que pagaste es parte de tu costo — no lo puedes recuperar ni descontar. Tu precio de venta no incluirá IGV adicional.',
+  ruc:'Con RUC, si compras con factura, el IGV que pagaste lo puedes descontar del IGV que cobras en tus ventas. Esto se llama crédito fiscal y reduce tu costo real. Si compraste con boleta, el IGV sí sale de tu bolsillo.'
+};
+
+// ══════════════════════════════════════════════════════
+// PASO 1: SITUACIÓN
+// ══════════════════════════════════════════════════════
+function setSit(s){
+  situacion=s;
+  document.querySelectorAll('.sit-opt').forEach(e=>e.classList.remove('sel'));
+  document.getElementById('sit-'+s).classList.add('sel');
+  document.getElementById('sitTxt').textContent=sitMsgs[s];
+  document.getElementById('sitMsg').style.display='flex';
+
+  const esRuc=(s==='ruc');
+  // Comprobante: solo visible para ruc
+  document.getElementById('comprobWrap').style.display=esRuc?'block':'none';
+  // IR y cobrar IGV: solo ruc
+  document.getElementById('irWrap').style.display=esRuc?'block':'none';
+  document.getElementById('igvVentaWrap').style.display=esRuc?'block':'none';
+  // Etiqueta con factura en flete
+  document.getElementById('gFleteLabel').style.display=esRuc?'flex':'none';
+  // Etiquetas con factura en gastos extra
+  document.querySelectorAll('.gasto-cf-dyn').forEach(el=>el.style.display=esRuc?'flex':'none');
+
+  if(!esRuc){cobIgv=false;tasaIR=0;}
+  calcP();
+}
+
+// ══════════════════════════════════════════════════════
+// PASO 2: COMPROBANTE / TIPO / KG
+// ══════════════════════════════════════════════════════
+function setComp(c){
+  comprobante=c;
+  ['F','B','S'].forEach((x,i)=>document.getElementById('c'+x).classList.toggle('act',['factura','boleta','sin'][i]===c));
+  calcP();
+}
+function setTipo(t){
+  tipoProd=t;
+  document.getElementById('tU').classList.toggle('act',t==='und');
+  document.getElementById('tK').classList.toggle('act',t==='kg');
+  document.getElementById('mUnd').style.display=t==='und'?'block':'none';
+  document.getElementById('mKg').style.display=t==='kg'?'block':'none';
+  calcP();
+}
+function calcKg(){
+  const u=parse(document.getElementById('kUnd').value)||0;
+  const p=parse(document.getElementById('kPeso').value)||0;
+  const px=parse(document.getElementById('kPxkg').value)||0;
+  const tk=u*p, ct=tk*px;
+  const res=document.getElementById('kgRes');
+  if(u>0&&p>0&&px>0){
+    document.getElementById('kgTkg').textContent=fmtKg(tk);
+    document.getElementById('kgCT').textContent=fmtPEN(ct);
+    res.style.display='flex';
+  } else { res.style.display='none'; }
+  calcP();
+}
+function getLote(){
+  if(tipoProd==='kg'){
+    const u=parse(document.getElementById('kUnd').value)||0;
+    const p=parse(document.getElementById('kPeso').value)||0;
+    const px=parse(document.getElementById('kPxkg').value)||0;
+    return u*p*px;
+  }
+  return parse(document.getElementById('pLote').value)||0;
+}
+function getUnid(){
+  return tipoProd==='kg'?
+    (parse(document.getElementById('kUnd').value)||0):
+    (parse(document.getElementById('pUnid').value)||0);
+}
+
+// ══════════════════════════════════════════════════════
+// GASTOS ADICIONALES
+// ══════════════════════════════════════════════════════
+function toggleGastos(){
+  gastosVisible=!gastosVisible;
+  document.getElementById('chkGastos').textContent=gastosVisible?'✓':'';
+  document.getElementById('chkGastos').classList.toggle('chked',gastosVisible);
+  document.getElementById('gastosBody').style.display=gastosVisible?'block':'none';
+  calcP();
+}
+
+function addGasto(){
+  const id=++gastoIdCnt;
+  gastoRows.push(id);
+  const esRuc=(situacion==='ruc');
+  const div=document.createElement('div');
+  div.className='gasto-row';
+  div.id='gr_'+id;
+  div.innerHTML=`
+    <input class="gasto-nm" type="text" placeholder="Nombre del gasto" id="gn_${id}">
+    <div class="gasto-amt-wr"><span class="gasto-s">S/</span>
+      <input class="gasto-amt" type="text" inputmode="decimal" placeholder="0,00" id="ga_${id}" oninput="calcP()">
+    </div>
+    <label class="gasto-cf gasto-cf-dyn" id="gcfl_${id}" style="display:${esRuc?'flex':'none'}">
+      <input type="checkbox" id="gcf_${id}" onchange="calcP()"> Con factura
+    </label>
+    <button class="gasto-rm" onclick="removeGasto(${id})">×</button>
+  `;
+  document.getElementById('gastosExtra').appendChild(div);
+}
+
+function removeGasto(id){
+  gastoRows=gastoRows.filter(r=>r!==id);
+  const el=document.getElementById('gr_'+id);
+  if(el) el.remove();
+  calcP();
+}
+
+function calcGastosCosto(esRuc){
+  let total=0;
+  if(!gastosVisible) return total;
+  // Flete
+  const flete=parse(document.getElementById('gFlete').value)||0;
+  const fleteF=esRuc&&document.getElementById('gFleteF').checked;
+  total+=fleteF? flete/1.18 : flete;
+  // Merma (en S/ directo al costo)
+  const merma=parse(document.getElementById('gMerma').value)||0;
+  total+=merma;
+  // Extra
+  gastoRows.forEach(id=>{
+    const monto=parse(document.getElementById('ga_'+id)?.value)||0;
+    const conF=esRuc&&document.getElementById('gcf_'+id)?.checked;
+    total+=conF? monto/1.18 : monto;
+  });
+  return total;
+}
+
+// ══════════════════════════════════════════════════════
+// PASO 3: GANANCIA
+// ══════════════════════════════════════════════════════
+function setModo(m){
+  const costoU=computeCostoU();
+  const oldModo=modoGan;
+  modoGan=m;
+  document.getElementById('mP').classList.toggle('act',m==='pct');
+  document.getElementById('mS').classList.toggle('act',m==='sol');
+  document.getElementById('gPct').style.display=m==='pct'?'block':'none';
+  document.getElementById('gSol').style.display=m==='sol'?'block':'none';
+
+  if(!isNaN(costoU)&&costoU>0){
+    if(m==='sol'){
+      // Trasladar pct → soles
+      const soles=costoU*ganPct/100;
+      document.getElementById('iSol').value=fmtN(soles);
+    } else {
+      // Trasladar soles → pct (ganPct ya actualizado en solC)
+      document.getElementById('iPct').value=ganPct.toFixed(1);
+      document.getElementById('slider').value=Math.min(ganPct,150);
+    }
+  }
+  calcP();
+}
+
+function sliderC(v){
+  ganPct=parseFloat(v);
+  document.getElementById('iPct').value=v;
+  calcP();
+}
+function pctC(v){
+  ganPct=parse(v)||0;
+  document.getElementById('slider').value=Math.min(ganPct,150);
+  calcP();
+}
+function solC(){
+  const costoU=computeCostoU();
+  const soles=parse(document.getElementById('iSol').value)||0;
+  ganPct=(!isNaN(costoU)&&costoU>0)? (soles/costoU*100) : 0;
+  calcP();
+}
+
+function setCobIgv(v){
+  cobIgv=v;
+  document.getElementById('bSI').classList.toggle('act',v);
+  document.getElementById('bNI').classList.toggle('act',!v);
+  calcP();
+}
+function setIR(t){
+  tasaIR=t;
+  [0,1,1.5].forEach(x=>document.getElementById('ir'+String(x).replace('.','_').replace('0','0')).classList.remove('act'));
+  document.getElementById('ir'+String(t).replace('.','15').replace('10','1')).classList.add('act');
+  // Simplificado:
+  document.getElementById('ir0').classList.toggle('act',t===0);
+  document.getElementById('ir1').classList.toggle('act',t===1);
+  document.getElementById('ir15').classList.toggle('act',t===1.5);
+  // Si hay IR → ganancia tiene dos filas
+  document.getElementById('lblGan').textContent=t>0?'Ganancia bruta':'Ganancia';
+  document.getElementById('rowIR').style.display=t>0?'grid':'none';
+  document.getElementById('rowNeta').style.display=t>0?'grid':'none';
+  calcP();
+}
+
+// ══════════════════════════════════════════════════════
+// CÁLCULO PRINCIPAL
+// ══════════════════════════════════════════════════════
+function computeCostoU(){
+  const lote=getLote(), unid=getUnid();
+  if(!lote||!unid||!situacion) return NaN;
+  const esRuc=(situacion==='ruc');
+  const credito=esRuc&&comprobante==='factura';
+  const costoBase=credito? lote/1.18 : lote;
+  const gastos=calcGastosCosto(esRuc);
+  return (costoBase+gastos)/unid;
+}
+
+function calcP(){
+  const lote=getLote(), unid=getUnid();
+  if(!lote||!unid||!situacion){
+    document.getElementById('costoBox').style.display='none';
+    document.getElementById('resultBox').style.display='none';
+    document.getElementById('espera').style.display='flex';
+    return;
+  }
+
+  const esRuc=(situacion==='ruc');
+  const credito=esRuc&&comprobante==='factura';
+  const costoBase=credito? lote/1.18 : lote;
+  const igvCompra=credito? lote-costoBase : 0;
+  const gastos=calcGastosCosto(esRuc);
+  const costoTotal=costoBase+gastos;
+  const costoU=costoTotal/unid;
+  const totalPagadoU=lote/unid;
+
+  // Mostrar costo real
+  document.getElementById('costoBox').style.display='block';
+  document.getElementById('costoInf').style.display=esRuc?'none':'block';
+  document.getElementById('costoRuc').style.display=esRuc?'block':'none';
+
+  if(esRuc){
+    document.getElementById('crTotal').textContent=fmtPEN(totalPagadoU);
+    document.getElementById('crIgvRow').style.display=credito?'flex':'none';
+    document.getElementById('crIgv').textContent=fmtPEN(igvCompra/unid);
+    document.getElementById('crSubRow').style.display=credito?'flex':'none';
+    document.getElementById('crSub').textContent=fmtPEN(costoU);
+    // Si no hay crédito, mostrar solo total pagado con label ajustado
+    if(!credito){
+      document.getElementById('crTotal').textContent=fmtPEN(costoU);
+    }
+  } else {
+    document.getElementById('ciCostoU').textContent=fmtPEN(costoU);
+  }
+
+  // Ganancia
+  const ganSoles=costoU*ganPct/100;
+
+  // Actualizar displays según modo
+  document.getElementById('pctSoles').textContent='= '+fmtPEN(ganSoles);
+  if(modoGan==='sol'){
+    document.getElementById('solPct').textContent='= '+ganPct.toFixed(1)+'%';
+  }
+
+  // Precio sin IGV, antes de IR
+  const precioBase=costoU+ganSoles;
+  // IR: para que ganancia sea real después del IR, ajustamos: precioSinIgv = precioBase / (1 - IR%)
+  const precioSinIgv=tasaIR>0? precioBase/(1-(tasaIR/100)) : precioBase;
+  const irMonto=precioSinIgv*(tasaIR/100);
+  const gananciaNeta=ganSoles-irMonto; // ganancia real después de pagar IR
+
+  const igvVenta=(cobIgv&&esRuc)? precioSinIgv*0.18 : 0;
+  const precioFinal=precioSinIgv+igvVenta;
+
+  // Tabla
+  document.getElementById('tCU').textContent=fmtPEN(costoU);
+  document.getElementById('tCT').textContent=fmtPEN(costoU*unid);
+  document.getElementById('tGU').textContent=fmtPEN(ganSoles);
+  document.getElementById('tGT').textContent=fmtPEN(ganSoles*unid);
+
+  if(tasaIR>0){
+    document.getElementById('irLbl').textContent='('+tasaIR+'%)';
+    document.getElementById('tIRU').textContent=fmtPEN(irMonto);
+    document.getElementById('tIRT').textContent=fmtPEN(irMonto*unid);
+    document.getElementById('tNU').textContent=fmtPEN(gananciaNeta);
+    document.getElementById('tNT').textContent=fmtPEN(gananciaNeta*unid);
+  }
+
+  // Hero
+  let heroLbl='Precio unitario de venta recomendado';
+  let heroSub='';
+  if(esRuc){
+    const partes=[];
+    partes.push('Ganancia');
+    if(tasaIR>0) partes.push('IR');
+    if(igvVenta>0) partes.push('IGV');
+    heroLbl='Precio al cliente (con '+partes.join(' + ')+')';
+    if(igvVenta>0){
+      heroSub='Subtotal '+fmtPEN(precioSinIgv)+' + IGV '+fmtPEN(igvVenta);
+    } else if(tasaIR>0){
+      heroSub='Incluye IR pago a cuenta '+fmtPEN(irMonto);
+    }
+  }
+  document.getElementById('heroLbl').textContent=heroLbl;
+  document.getElementById('heroSub').textContent=heroSub;
+  document.getElementById('heroVal').textContent=fmtPEN(precioFinal);
+
+  // Alerta margen
+  const alertEl=document.getElementById('alertRes');
+  alertEl.className='alert mt8';
+  alertEl.style.display='flex';
+  if(ganPct<15){
+    alertEl.classList.add('ar');
+    document.getElementById('alertIco').textContent='⚠️';
+    document.getElementById('alertTxt').textContent='Margen muy bajo. Con menos del 15% cualquier gasto extra puede hacerte perder dinero.';
+  } else if(ganPct<25){
+    alertEl.classList.add('ay');
+    document.getElementById('alertIco').textContent='⚡';
+    document.getElementById('alertTxt').textContent='Margen ajustado. Cubre costos pero con poco margen de error.';
+  } else if(ganPct>=50){
+    alertEl.classList.add('ag');
+    document.getElementById('alertIco').textContent='🎯';
+    document.getElementById('alertTxt').textContent='¡Excelente margen! Verifica que el mercado soporte ese precio.';
+  } else {
+    alertEl.classList.add('ag');
+    document.getElementById('alertIco').textContent='✅';
+    document.getElementById('alertTxt').textContent='Buen margen. Tu precio cubre costos y genera ganancia real.';
+  }
+
+  document.getElementById('resultBox').style.display='block';
+  document.getElementById('espera').style.display='none';
+}
+
+// ══════════════════════════════════════════════════════
+// GUARDAR
+// ══════════════════════════════════════════════════════
+let savedCount=0;
+function guardar(){
+  const nomEl=document.getElementById('pNom');
+  const nom=(nomEl.value||'').trim();
+  if(!nom){
+    nomEl.style.borderColor='var(--rojo)';
+    nomEl.placeholder='⚠️ Escribe el nombre del producto primero';
+    nomEl.focus();
+    setTimeout(()=>{nomEl.style.borderColor='';nomEl.placeholder='Ej: Pollo entero x50, Jabón Marsella x24';},2500);
+    return;
+  }
+  if(savedCount>=3){
+    document.getElementById('proLock').style.display='block';
+    goTab('hist',document.querySelectorAll('.tab-btn')[2]);
+    return;
+  }
+
+  const costoU=computeCostoU();
+  const ganSoles=costoU*ganPct/100;
+  const precioBase=costoU+ganSoles;
+  const esRuc=(situacion==='ruc');
+  const precioSinIgv=tasaIR>0? precioBase/(1-(tasaIR/100)) : precioBase;
+  const igvVenta=(cobIgv&&esRuc)? precioSinIgv*.18 : 0;
+  const precioFinal=precioSinIgv+igvVenta;
+  const unid=getUnid();
+  const irLabel=tasaIR>0?' · IR '+tasaIR+'%':'';
+
+  savedCount++;
+  const list=document.getElementById('histList');
+  if(list.querySelector('.hist-empty')) list.innerHTML='';
+  const it=document.createElement('div');
+  it.className='hist-item';
+  it.innerHTML=`
+    <div>
+      <div class="hist-nm">${nom}</div>
+      <div class="hist-dt">${unid} uds · margen ${ganPct.toFixed(0)}% · ${(situacion||'').toUpperCase()}${irLabel}</div>
+    </div>
+    <div class="hist-price">${fmtPEN(precioFinal)}</div>
+  `;
+  list.appendChild(it);
+  if(savedCount>=3) document.getElementById('proLock').style.display='block';
+
+  const btn=document.getElementById('btnGuardar');
+  btn.textContent='✅ ¡Guardado!';
+  btn.style.background='var(--verde-dark)';
+  setTimeout(()=>{btn.innerHTML='💾 Guardar en Mis productos';btn.style.background='';},1800);
+  goTab('hist',document.querySelectorAll('.tab-btn')[2]);
+}
+</script>
+</body>
+</html>

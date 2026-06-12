@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Precio Justo</title>
+<title>Precio Justo — Calculadora de precios e IGV para tu negocio</title>
+<meta name="description" content="Calcula el precio de venta justo para tu bodega o negocio en Perú: IGV, crédito fiscal, impuesto a la renta y tu ganancia real. Gratis y funciona sin internet.">
+<meta name="theme-color" content="#00C37A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -537,6 +542,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="hlbl" id="heroLbl">Precio unitario de venta recomendado</div>
           <div class="hsub" id="heroSub"></div>
           <div class="hval" id="heroVal">S/ —</div>
+          <div id="heroCalle" style="display:none;margin-top:8px;background:rgba(255,255,255,.16);border-radius:8px;padding:6px 10px;font-size:12px;color:#fff;line-height:1.45"></div>
         </div>
 
         <div id="alertRes" class="alert mt8" style="display:none">
@@ -563,7 +569,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="pbdy">
       <div id="histList"><div class="hist-empty">Aún no tienes productos guardados.<br>Calcula tu primer precio y guárdalo. 👆</div></div>
-      <button class="btn btn-dk mt10" id="btnPdf" style="display:none" onclick="exportPDF()">🖨️ Exportar lista de precios (PDF)</button>
+      <button class="btn btn-gn mt10" id="btnWsp" style="display:none" onclick="compartirWsp()">📤 Compartir lista por WhatsApp</button>
+      <button class="btn btn-dk mt8" id="btnPdf" style="display:none" onclick="exportPDF()">🖨️ Exportar lista de precios (PDF)</button>
       <div class="pro-lock" id="proLock" style="display:none">
         <div style="font-size:26px;margin-bottom:7px">🔒</div>
         <p>Alcanzaste el límite de 3 productos gratis.<br><strong>Pro</strong> incluye historial ilimitado, exportar PDF y comparar escenarios.</p>
@@ -571,6 +578,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
   </div>
+</div>
+
+<div style="text-align:center;padding:18px 24px 8px;font-size:10px;color:var(--muted);line-height:1.6">
+  Precio Justo es una herramienta de cálculo referencial y educativa.<br>
+  No constituye asesoría tributaria, contable ni legal. Tasas vigentes: IGV 18%, IR pago a cuenta RMT 1% / RER-RG 1,5%.
 </div>
 
 </div><!-- /cnt -->
@@ -1035,6 +1047,16 @@ function calcP(){
   document.getElementById('heroSub').textContent=heroSub;
   document.getElementById('heroVal').textContent=fmtPEN(precioFinal);
 
+  // Precio de calle: nadie cobra S/ 16,17 — sugerimos redondear a 10 céntimos
+  const calle=Math.ceil((precioFinal-1e-9)*10)/10;
+  const heroCalleEl=document.getElementById('heroCalle');
+  if(calle-precioFinal>0.001){
+    heroCalleEl.textContent='💡 Precio de calle: cobra '+fmtPEN(calle)+' y ganas '+fmtPEN(calle-precioFinal)+' más por unidad ('+fmtPEN((calle-precioFinal)*unid)+' extra en el lote)';
+    heroCalleEl.style.display='block';
+  } else {
+    heroCalleEl.style.display='none';
+  }
+
   // Alerta margen
   const alertEl=document.getElementById('alertRes');
   alertEl.className='alert mt8';
@@ -1107,6 +1129,17 @@ function renderProductos(){
   }
   document.getElementById('proLock').style.display=(!isPro&&productos.length>=LIMITE_GRATIS)?'block':'none';
   document.getElementById('btnPdf').style.display=productos.length?'flex':'none';
+  document.getElementById('btnWsp').style.display=productos.length?'flex':'none';
+}
+
+// Compartir por WhatsApp es GRATIS a propósito: cada lista compartida
+// lleva la marca a un chat nuevo (motor de crecimiento).
+function compartirWsp(){
+  if(!productos.length) return;
+  let txt='📋 *Mi lista de precios*\n\n';
+  productos.forEach(p=>{ txt+='• '+p.nom+' — *'+p.precio+'*\n'; });
+  txt+='\n🧮 Calculado con Precio Justo';
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
 }
 
 function guardar(){
@@ -1263,6 +1296,14 @@ function exportPDF(){
 // ══════════════════════════════════════════════════════
 function openPro(){ document.getElementById('proModal').style.display='flex'; }
 function closePro(){ document.getElementById('proModal').style.display='none'; }
+
+// ══════════════════════════════════════════════════════
+// PWA: service worker para funcionar sin internet
+// (solo en http/https; en file:// no aplica)
+// ══════════════════════════════════════════════════════
+if('serviceWorker' in navigator && location.protocol!=='file:'){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 
 // ══════════════════════════════════════════════════════
 // TOOLTIPS TÁCTILES (en celular no existe :hover)

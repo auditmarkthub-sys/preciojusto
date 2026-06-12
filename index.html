@@ -430,8 +430,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- Modo ganancia -->
       <div class="sec-lbl" style="margin-top:0">¿Cómo ingresas tu ganancia?</div>
       <div class="tog" style="margin-bottom:11px">
-        <button class="togb act" id="mP" onclick="setModo('pct')">En porcentaje (%)</button>
-        <button class="togb" id="mS" onclick="setModo('sol')">En soles (S/)</button>
+        <button class="togb act" id="mP" onclick="setModo('pct')">Margen (%)</button>
+        <button class="togb" id="mS" onclick="setModo('sol')">Ganancia (S/)</button>
+        <button class="togb" id="mPr" onclick="setModo('pre')">Ya sé mi precio</button>
       </div>
 
       <!-- Modo % -->
@@ -461,6 +462,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
           <div class="pair-res" id="solPct">= —%</div>
         </div>
+      </div>
+
+      <!-- Modo precio directo -->
+      <div id="gPre" style="display:none">
+        <label class="fl">¿A cuánto lo vas a vender? (precio al cliente por unidad)</label>
+        <div class="inp-pair">
+          <div class="iw"><span class="pfx">S/</span>
+            <input class="inp" id="iPre" type="text" inputmode="decimal" placeholder="0,00" oninput="calcP()">
+          </div>
+          <div class="pair-res" id="preGan">= —</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:5px">Te decimos cuánto ganas en soles y en % con ese precio.</div>
       </div>
 
       <!-- IR (solo ruc) -->
@@ -837,22 +850,23 @@ function calcGastosCosto(esRuc){
 // ══════════════════════════════════════════════════════
 function setModo(m){
   const costoU=computeCostoU();
-  const oldModo=modoGan;
   modoGan=m;
   document.getElementById('mP').classList.toggle('act',m==='pct');
   document.getElementById('mS').classList.toggle('act',m==='sol');
+  document.getElementById('mPr').classList.toggle('act',m==='pre');
   document.getElementById('gPct').style.display=m==='pct'?'block':'none';
   document.getElementById('gSol').style.display=m==='sol'?'block':'none';
+  document.getElementById('gPre').style.display=m==='pre'?'block':'none';
 
+  // Trasladar el valor actual al modo elegido (ganPct siempre está al día)
   if(!isNaN(costoU)&&costoU>0){
     if(m==='sol'){
-      // Trasladar pct → soles
-      const soles=costoU*ganPct/100;
-      document.getElementById('iSol').value=fmtN(soles);
-    } else {
-      // Trasladar soles → pct (ganPct ya actualizado en solC)
+      document.getElementById('iSol').value=fmtN(costoU*ganPct/100);
+    } else if(m==='pct'){
       document.getElementById('iPct').value=ganPct.toFixed(1);
-      document.getElementById('slider').value=Math.min(ganPct,150);
+      document.getElementById('slider').value=Math.min(Math.max(ganPct,1),150);
+    } else if(m==='pre'){
+      document.getElementById('iPre').value=fmtN(computePrecio(costoU,ganPct).precio);
     }
   }
   calcP();
@@ -936,20 +950,37 @@ function calcP(){
     document.getElementById('ciCostoU').textContent=fmtPEN(costoU);
   }
 
-  // Ganancia: en modo soles manda lo que el usuario escribió;
-  // en modo % manda el porcentaje. ganPct queda siempre derivado/consistente.
+  // IR aplica solo con RUC
+  const aplicaIR=esRuc? tasaIR : 0;
+
+  // Ganancia: manda el campo del modo activo; ganPct queda siempre derivado/consistente.
+  // - pct: el porcentaje manda
+  // - sol: los soles escritos mandan
+  // - pre: el precio de venta manda → calculamos la ganancia al revés
   let ganSoles;
   if(modoGan==='sol'){
     ganSoles=parse(document.getElementById('iSol').value)||0;
     ganPct=costoU>0? ganSoles/costoU*100 : 0;
-    document.getElementById('solPct').textContent='= '+ganPct.toFixed(1)+'%';
+    document.getElementById('solPct').textContent='= '+ganPct.toFixed(1).replace('.',',')+'%';
+  } else if(modoGan==='pre'){
+    const pIn=parse(document.getElementById('iPre').value);
+    const pg=document.getElementById('preGan');
+    if(isNaN(pIn)||pIn<=0){
+      ganSoles=0; ganPct=0;
+      pg.textContent='= —'; pg.style.color='';
+    } else {
+      // Inverso exacto del cálculo de precio: quitar IGV de venta, quitar IR, restar costo
+      const sinIgv=(cobIgv&&esRuc)? pIn/1.18 : pIn;
+      const baseSinIR=aplicaIR>0? sinIgv*(1-(aplicaIR/100)) : sinIgv;
+      ganSoles=baseSinIR-costoU;
+      ganPct=costoU>0? ganSoles/costoU*100 : 0;
+      pg.textContent='= '+fmtPEN(ganSoles)+' · '+ganPct.toFixed(1).replace('.',',')+'%';
+      pg.style.color=ganSoles<0?'var(--rojo)':'';
+    }
   } else {
     ganSoles=costoU*ganPct/100;
   }
   document.getElementById('pctSoles').textContent='= '+fmtPEN(ganSoles);
-
-  // IR aplica solo con RUC
-  const aplicaIR=esRuc? tasaIR : 0;
 
   // Precio sin IGV, antes de IR
   const precioBase=costoU+ganSoles;
@@ -969,8 +1000,11 @@ function calcP(){
   document.getElementById('rowNeta').style.display=aplicaIR>0?'grid':'none';
   document.getElementById('tCU').textContent=fmtPEN(costoU);
   document.getElementById('tCT').textContent=fmtPEN(costoU*unid);
-  document.getElementById('tGU').textContent=fmtPEN(aplicaIR>0?ganBruta:ganSoles);
-  document.getElementById('tGT').textContent=fmtPEN((aplicaIR>0?ganBruta:ganSoles)*unid);
+  const ganMostrada=aplicaIR>0?ganBruta:ganSoles;
+  document.getElementById('tGU').textContent=fmtPEN(ganMostrada);
+  document.getElementById('tGT').textContent=fmtPEN(ganMostrada*unid);
+  document.getElementById('tGU').className='res-tc '+(ganMostrada<0?'rd':'gn');
+  document.getElementById('tGT').className='res-tc '+(ganMostrada<0?'rd':'gn');
 
   if(aplicaIR>0){
     document.getElementById('irLbl').textContent='('+aplicaIR+'%)';
@@ -978,10 +1012,12 @@ function calcP(){
     document.getElementById('tIRT').textContent=fmtPEN(irMonto*unid);
     document.getElementById('tNU').textContent=fmtPEN(ganSoles);
     document.getElementById('tNT').textContent=fmtPEN(ganSoles*unid);
+    document.getElementById('tNU').className='res-tc '+(ganSoles<0?'rd':'gn');
+    document.getElementById('tNT').className='res-tc '+(ganSoles<0?'rd':'gn');
   }
 
   // Hero
-  let heroLbl='Precio unitario de venta recomendado';
+  let heroLbl=modoGan==='pre'?'Tu precio de venta':'Precio unitario de venta recomendado';
   let heroSub='';
   if(esRuc){
     const partes=[];
@@ -1003,7 +1039,11 @@ function calcP(){
   const alertEl=document.getElementById('alertRes');
   alertEl.className='alert mt8';
   alertEl.style.display='flex';
-  if(ganPct<15){
+  if(ganSoles<0){
+    alertEl.classList.add('ar');
+    document.getElementById('alertIco').textContent='🚨';
+    document.getElementById('alertTxt').textContent='Con este precio PIERDES '+fmtPEN(-ganSoles)+' por unidad ('+fmtPEN(-ganSoles*unid)+' en todo el lote). Para no perder, vende a más de '+fmtPEN(computePrecio(costoU,0).precio)+'.';
+  } else if(ganPct<15){
     alertEl.classList.add('ar');
     document.getElementById('alertIco').textContent='⚠️';
     document.getElementById('alertTxt').textContent='Margen muy bajo. Con menos del 15% cualquier gasto extra puede hacerte perder dinero.';

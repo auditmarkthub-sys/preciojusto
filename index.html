@@ -176,7 +176,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* Hoja de impresión (PDF) */
 #printSheet{display:none}
 @media print{
-  .nav,.ad-bar,.tabs-bar,.cnt,#proModal,#escModal{display:none!important}
+  .nav,.ad-bar,.tabs-bar,.cnt,#proModal,#escModal,#pdfModal{display:none!important}
   #printSheet{display:block!important}
   body{background:#fff}
 }
@@ -186,7 +186,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 #printSheet th{text-align:left;border-bottom:2px solid #000;padding:6px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
 #printSheet td{border-bottom:1px solid #ccc;padding:8px 4px}
 #printSheet .ps-precio{font-weight:700;text-align:right;white-space:nowrap}
+#printSheet .ps-num{text-align:right;white-space:nowrap}
+#printSheet tfoot td{border-top:2px solid #000;border-bottom:none;padding:8px 4px;font-weight:700}
 #printSheet .ps-foot{margin-top:24px;font-size:11px;color:#777}
+#printSheet .ps-resumen{margin-top:18px;padding:12px;border:2px solid #000;border-radius:8px;font-size:13px;line-height:1.9}
 
 .tip{display:inline-block;width:16px;height:16px;background:var(--border);border-radius:50%;font-size:10px;color:var(--muted);text-align:center;line-height:16px;cursor:help;font-weight:700;position:relative}
 .tip::before{content:'';position:absolute;inset:-8px}/* área táctil ampliada */
@@ -570,7 +573,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="pbdy">
       <div id="histList"><div class="hist-empty">Aún no tienes productos guardados.<br>Calcula tu primer precio y guárdalo. 👆</div></div>
       <button class="btn btn-gn mt10" id="btnWsp" style="display:none" onclick="compartirWsp()">📤 Compartir lista por WhatsApp</button>
-      <button class="btn btn-dk mt8" id="btnPdf" style="display:none" onclick="exportPDF()">🖨️ Exportar lista de precios (PDF)</button>
+      <button class="btn btn-dk mt8" id="btnPdf" style="display:none" onclick="openPdf()">🖨️ Exportar lista de precios (PDF)</button>
       <div class="pro-lock" id="proLock" style="display:none">
         <div style="font-size:26px;margin-bottom:7px">🔒</div>
         <p>Alcanzaste el límite de 3 productos gratis.<br><strong>Pro</strong> incluye historial ilimitado, exportar PDF y comparar escenarios.</p>
@@ -627,15 +630,36 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
+<!-- ══════ MODAL EXPORTAR PDF ══════ -->
+<div id="pdfModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closePdf()">
+  <div style="background:var(--white);border-radius:var(--r);max-width:360px;width:100%;padding:20px 18px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px">🖨️ Exportar PDF</div>
+    <div class="sec-lbl">Datos de tu negocio (salen en la cabecera)</div>
+    <div class="field" style="margin-bottom:8px">
+      <input class="inp nf" id="bizName" type="text" placeholder="Nombre de tu negocio (ej: Bodega Doña María)" style="padding-left:12px">
+    </div>
+    <div class="field" style="margin-bottom:4px">
+      <input class="inp nf" id="bizTel" type="text" inputmode="tel" placeholder="Celular / WhatsApp (opcional)" style="padding-left:12px">
+    </div>
+    <button class="btn btn-gn mt10" onclick="exportPDF('clientes')">🏷️ Lista para clientes</button>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center">Solo productos y precios — sin tus costos ni ganancias</div>
+    <button class="btn btn-dk mt10" onclick="exportPDF('privado')">📊 Reporte privado de mi negocio</button>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center">Costos, ganancias, márgenes y totales — solo para tus ojos</div>
+    <button class="btn mt12" style="background:var(--bg);color:var(--muted)" onclick="closePdf()">Cancelar</button>
+  </div>
+</div>
+
 <!-- ══════ HOJA DE IMPRESIÓN (PDF) ══════ -->
 <div id="printSheet">
-  <h1>Precio<span style="color:#00C37A">Justo</span> — Lista de precios</h1>
+  <h1 id="psTitulo">Lista de precios</h1>
+  <div class="ps-fecha" id="psBiz" style="font-size:14px;color:#222;font-weight:600"></div>
   <div class="ps-fecha" id="psFecha"></div>
   <table>
-    <thead><tr><th>Producto</th><th>Detalle</th><th style="text-align:right">Precio de venta</th></tr></thead>
+    <thead><tr id="psHead"></tr></thead>
     <tbody id="psBody"></tbody>
   </table>
-  <div class="ps-foot">Generado con Precio Justo · by Audit Markt Hub</div>
+  <div class="ps-resumen" id="psResumen" style="display:none"></div>
+  <div class="ps-foot" id="psNota">Generado con Precio Justo · by Audit Markt Hub</div>
 </div>
 
 <script>
@@ -1174,7 +1198,9 @@ function guardar(){
   productos.push({
     nom:nom,
     detalle:unid+' uds · margen '+ganPct.toFixed(0)+'% · '+(situacion||'').toUpperCase()+irLabel+' · '+fecha,
-    precio:fmtPEN(precioFinal)
+    precio:fmtPEN(precioFinal),
+    // Números crudos para el reporte privado (los strings de arriba son para la UI)
+    n:{unid:unid, costoU:costoU, gan:ganSoles, margen:ganPct, precioNum:precioFinal, fecha:fecha}
   });
   persistProductos();
   renderProductos();
@@ -1273,21 +1299,84 @@ function closeEsc(){ document.getElementById('escModal').style.display='none'; }
 
 // ══════════════════════════════════════════════════════
 // EXPORTAR PDF (PRO) — vía impresión del navegador, sin librerías
+// Dos modos: 'clientes' (sin costos ni márgenes — es para pegar en la
+// tienda) y 'privado' (reporte completo con totales del negocio).
 // ══════════════════════════════════════════════════════
-function exportPDF(){
+function openPdf(){
   if(!isPro){ openPro(); return; }
   if(!productos.length) return;
-  document.getElementById('psFecha').textContent='Generada el '+new Date().toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'});
-  const tb=document.getElementById('psBody');
-  tb.innerHTML='';
-  productos.forEach(p=>{
-    const tr=document.createElement('tr');
-    const td1=document.createElement('td'); td1.textContent=p.nom;
-    const td2=document.createElement('td'); td2.textContent=p.detalle;
-    const td3=document.createElement('td'); td3.className='ps-precio'; td3.textContent=p.precio;
-    tr.append(td1,td2,td3);
-    tb.appendChild(tr);
-  });
+  try{
+    const biz=JSON.parse(localStorage.getItem('pj_negocio')||'{}');
+    if(biz.nom) document.getElementById('bizName').value=biz.nom;
+    if(biz.tel) document.getElementById('bizTel').value=biz.tel;
+  }catch(e){}
+  document.getElementById('pdfModal').style.display='flex';
+}
+function closePdf(){ document.getElementById('pdfModal').style.display='none'; }
+
+function exportPDF(modo){
+  if(!isPro){ openPro(); return; }
+  if(!productos.length) return;
+  const bizNom=(document.getElementById('bizName').value||'').trim();
+  const bizTel=(document.getElementById('bizTel').value||'').trim();
+  try{ localStorage.setItem('pj_negocio',JSON.stringify({nom:bizNom,tel:bizTel})); }catch(e){}
+
+  const esCli=(modo==='clientes');
+  document.getElementById('psTitulo').textContent=esCli?'Lista de precios':'Reporte de mi negocio';
+  const bizEl=document.getElementById('psBiz');
+  bizEl.textContent=bizNom+(bizNom&&bizTel?' · ':'')+(bizTel?'📱 '+bizTel:'');
+  bizEl.style.display=(bizNom||bizTel)?'block':'none';
+  document.getElementById('psFecha').textContent=(esCli?'Actualizada el ':'Generado el ')+new Date().toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'});
+
+  const head=document.getElementById('psHead'), tb=document.getElementById('psBody');
+  head.innerHTML=''; tb.innerHTML='';
+  const th=t=>{const e=document.createElement('th');e.textContent=t;if(t!=='Producto')e.style.textAlign='right';head.appendChild(e);};
+  const td=(tr,t,cls)=>{const e=document.createElement('td');e.textContent=t;if(cls)e.className=cls;tr.appendChild(e);};
+
+  const resumen=document.getElementById('psResumen');
+  if(esCli){
+    ['Producto','Precio'].forEach(th);
+    productos.forEach(p=>{
+      const tr=document.createElement('tr');
+      td(tr,p.nom); td(tr,p.precio,'ps-precio');
+      tb.appendChild(tr);
+    });
+    resumen.style.display='none';
+    document.getElementById('psNota').textContent='Precios sujetos a cambio · Hecho con Precio Justo';
+  } else {
+    ['Producto','Uds','Costo/und','Precio venta','Gano/und','Margen','Gano en el lote'].forEach(th);
+    let inv=0,venta=0,gan=0,antiguos=0;
+    productos.forEach(p=>{
+      const tr=document.createElement('tr');
+      td(tr,p.nom);
+      if(p.n){
+        td(tr,String(p.n.unid),'ps-num');
+        td(tr,fmtPEN(p.n.costoU),'ps-num');
+        td(tr,fmtPEN(p.n.precioNum),'ps-precio');
+        td(tr,fmtPEN(p.n.gan),'ps-num');
+        td(tr,p.n.margen.toFixed(0)+'%','ps-num');
+        td(tr,fmtPEN(p.n.gan*p.n.unid),'ps-precio');
+        inv+=p.n.costoU*p.n.unid; venta+=p.n.precioNum*p.n.unid; gan+=p.n.gan*p.n.unid;
+      } else {
+        ['—','—'].forEach(x=>td(tr,x,'ps-num'));
+        td(tr,p.precio,'ps-precio');
+        ['—','—','—'].forEach(x=>td(tr,x,'ps-num'));
+        antiguos++;
+      }
+      tb.appendChild(tr);
+    });
+    resumen.innerHTML='';
+    const lineas=[
+      '💰 Invertido en mercadería: <strong>'+fmtPEN(inv)+'</strong>',
+      '🏪 Si vendes todo: <strong>'+fmtPEN(venta)+'</strong>',
+      '✅ Tu ganancia total: <strong>'+fmtPEN(gan)+'</strong>'
+    ];
+    resumen.innerHTML='<strong>RESUMEN DEL NEGOCIO</strong><br>'+lineas.join('<br>')+
+      (antiguos?'<br><span style="font-size:11px;color:#777">(*) '+antiguos+' producto(s) guardados con una versión anterior no tienen detalle de costos — vuelve a guardarlos para incluirlos en los totales.</span>':'');
+    resumen.style.display='block';
+    document.getElementById('psNota').textContent='Documento privado de tu negocio — no lo pegues en la tienda · Generado con Precio Justo by Audit Markt Hub';
+  }
+  closePdf();
   window.print();
 }
 

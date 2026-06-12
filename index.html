@@ -157,6 +157,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pro-lock{background:var(--bg);border:1.5px dashed var(--border);border-radius:var(--rs);padding:18px;text-align:center;margin-top:10px}
 .pro-lock p{font-size:13px;color:var(--muted);line-height:1.5}
 .pro-unlock{background:var(--amarillo);color:var(--text);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;border:none;border-radius:99px;padding:8px 18px;cursor:pointer;margin-top:10px}
+.btn-pro.pro-on{background:var(--verde);color:#fff}
+
+/* Escenarios (Pro) */
+.esc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.esc-card{border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 8px;text-align:center;background:var(--bg)}
+.esc-card.mid{border-color:var(--verde);background:var(--verde-light)}
+.esc-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.esc-pct{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-top:2px}
+.esc-val{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-top:7px;color:var(--verde-dark)}
+.esc-sub{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+/* Hoja de impresión (PDF) */
+#printSheet{display:none}
+@media print{
+  .nav,.ad-bar,.tabs-bar,.cnt,#proModal,#escModal{display:none!important}
+  #printSheet{display:block!important}
+  body{background:#fff}
+}
+#printSheet h1{font-family:'Syne',sans-serif;font-size:22px}
+#printSheet .ps-fecha{font-size:12px;color:#555;margin:4px 0 18px}
+#printSheet table{width:100%;border-collapse:collapse;font-size:13px}
+#printSheet th{text-align:left;border-bottom:2px solid #000;padding:6px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+#printSheet td{border-bottom:1px solid #ccc;padding:8px 4px}
+#printSheet .ps-precio{font-weight:700;text-align:right;white-space:nowrap}
+#printSheet .ps-foot{margin-top:24px;font-size:11px;color:#777}
 
 .tip{display:inline-block;width:16px;height:16px;background:var(--border);border-radius:50%;font-size:10px;color:var(--muted);text-align:center;line-height:16px;cursor:help;font-weight:700;position:relative}
 .tip::before{content:'';position:absolute;inset:-8px}/* área táctil ampliada */
@@ -171,7 +196,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <nav class="nav">
   <div class="logo">Precio<span class="v">Justo</span><span class="by">by Audit Markt Hub</span></div>
-  <button class="btn-pro" onclick="openPro()">⚡ Pro · S/ 9,90</button>
+  <button class="btn-pro" id="btnProNav" onclick="openPro()">⚡ Pro · S/ 9,90</button>
 </nav>
 
 <div class="ad-bar" id="adBar">
@@ -506,6 +531,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
 
         <button class="btn btn-gn mt12" id="btnGuardar" onclick="guardar()">💾 Guardar en Mis productos</button>
+        <button class="btn mt8" id="btnComparar" onclick="compararEsc()" style="background:var(--azul-light);color:var(--azul)">📊 Comparar escenarios <span id="cmpBadge" style="font-size:11px">· 🔒 Pro</span></button>
       </div>
 
       <div id="espera" class="alert ay" style="margin-top:8px">
@@ -520,10 +546,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="tab-hist" class="tab-content">
   <div class="panel">
     <div class="phdr"><div class="picon ig">📋</div>
-      <div><div class="ptit">Mis productos guardados</div><div class="psub">Plan gratis: hasta 3 productos</div></div>
+      <div><div class="ptit">Mis productos guardados</div><div class="psub" id="histSub">Plan gratis: hasta 3 productos</div></div>
     </div>
     <div class="pbdy">
       <div id="histList"><div class="hist-empty">Aún no tienes productos guardados.<br>Calcula tu primer precio y guárdalo. 👆</div></div>
+      <button class="btn btn-dk mt10" id="btnPdf" style="display:none" onclick="exportPDF()">🖨️ Exportar lista de precios (PDF)</button>
       <div class="pro-lock" id="proLock" style="display:none">
         <div style="font-size:26px;margin-bottom:7px">🔒</div>
         <p>Alcanzaste el límite de 3 productos gratis.<br><strong>Pro</strong> incluye historial ilimitado, exportar PDF y comparar escenarios.</p>
@@ -547,9 +574,43 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       ✅ Compara escenarios de ganancia<br>
       ✅ Sin publicidad
     </div>
-    <div class="alert ay mt10" style="text-align:left"><span>🚧</span><span>Estamos activando los pagos. Muy pronto disponible — tus productos guardados te estarán esperando.</span></div>
+    <div id="proPendiente">
+      <div class="alert ay mt10" style="text-align:left"><span>🚧</span><span>Estamos activando los pagos. Muy pronto disponible — tus productos guardados te estarán esperando.</span></div>
+      <div class="sec-lbl" style="text-align:left">¿Tienes un código de activación?</div>
+      <div style="display:flex;gap:7px">
+        <input class="inp" id="proCode" type="text" placeholder="CÓDIGO" style="padding-left:12px;text-transform:uppercase;font-size:14px" onkeydown="if(event.key==='Enter')activarPro()">
+        <button class="btn btn-gn" style="width:auto;padding:11px 16px" onclick="activarPro()">Activar</button>
+      </div>
+      <div id="proMsg" class="alert ar mt8" style="display:none;text-align:left"><span>❌</span><span>Código no válido. Verifica e intenta de nuevo.</span></div>
+    </div>
+    <div id="proActivo" style="display:none">
+      <div class="alert ag mt10" style="text-align:left"><span>✅</span><span><strong>Pro está activo en este dispositivo.</strong> Disfruta de productos ilimitados, PDF y escenarios.</span></div>
+      <div style="margin-top:8px"><a href="#" onclick="desactivarPro();return false" style="font-size:11px;color:var(--muted)">Desactivar Pro (demo)</a></div>
+    </div>
     <button class="btn btn-dk mt12" onclick="closePro()">Entendido</button>
   </div>
+</div>
+
+<!-- ══════ MODAL ESCENARIOS (PRO) ══════ -->
+<div id="escModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeEsc()">
+  <div style="background:var(--white);border-radius:var(--r);max-width:380px;width:100%;padding:20px 18px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px">📊 Comparar escenarios</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:3px" id="escSub"></div>
+    <div id="escBody"></div>
+    <div class="alert ab mt10" style="font-size:12px"><span>💡</span><span>El mejor margen es el más alto que tu mercado acepte. Compara con el precio de tu competencia antes de decidir.</span></div>
+    <button class="btn btn-dk mt10" onclick="closeEsc()">Cerrar</button>
+  </div>
+</div>
+
+<!-- ══════ HOJA DE IMPRESIÓN (PDF) ══════ -->
+<div id="printSheet">
+  <h1>Precio<span style="color:#00C37A">Justo</span> — Lista de precios</h1>
+  <div class="ps-fecha" id="psFecha"></div>
+  <table>
+    <thead><tr><th>Producto</th><th>Detalle</th><th style="text-align:right">Precio de venta</th></tr></thead>
+    <tbody id="psBody"></tbody>
+  </table>
+  <div class="ps-foot">Generado con Precio Justo · by Audit Markt Hub</div>
 </div>
 
 <script>
@@ -1004,7 +1065,8 @@ function renderProductos(){
       list.appendChild(it);
     });
   }
-  document.getElementById('proLock').style.display=productos.length>=LIMITE_GRATIS?'block':'none';
+  document.getElementById('proLock').style.display=(!isPro&&productos.length>=LIMITE_GRATIS)?'block':'none';
+  document.getElementById('btnPdf').style.display=productos.length?'flex':'none';
 }
 
 function guardar(){
@@ -1017,7 +1079,7 @@ function guardar(){
     setTimeout(()=>{nomEl.style.borderColor='';nomEl.placeholder='Ej: Pollo entero x50, Jabón Marsella x24';},2500);
     return;
   }
-  if(productos.length>=LIMITE_GRATIS){
+  if(!isPro&&productos.length>=LIMITE_GRATIS){
     document.getElementById('proLock').style.display='block';
     goTab('hist',document.querySelectorAll('.tab-btn')[2]);
     return;
@@ -1051,7 +1113,110 @@ function guardar(){
   goTab('hist',document.querySelectorAll('.tab-btn')[2]);
 }
 
+// ══════════════════════════════════════════════════════
+// PRO: activación por código (PRODEMO) o URL ?pro=1
+// El mismo mecanismo sirve para el cobro manual por Yape:
+// cliente paga → recibe su código → activa en su dispositivo.
+// ══════════════════════════════════════════════════════
+let isPro=false;
+try{
+  if(new URLSearchParams(location.search).get('pro')==='1') localStorage.setItem('pj_pro','1');
+  isPro=localStorage.getItem('pj_pro')==='1';
+}catch(e){}
+
+function applyProUI(){
+  const nav=document.getElementById('btnProNav');
+  nav.textContent=isPro?'✓ Pro activo':'⚡ Pro · S/ 9,90';
+  nav.classList.toggle('pro-on',isPro);
+  document.getElementById('adBar').style.display=isPro?'none':'flex';
+  document.getElementById('histSub').textContent=isPro?'Pro: productos ilimitados':'Plan gratis: hasta 3 productos';
+  document.getElementById('cmpBadge').style.display=isPro?'none':'inline';
+  document.getElementById('proPendiente').style.display=isPro?'none':'block';
+  document.getElementById('proActivo').style.display=isPro?'block':'none';
+  renderProductos();
+}
+function activarPro(){
+  const code=(document.getElementById('proCode').value||'').trim().toUpperCase();
+  if(code==='PRODEMO'){
+    try{localStorage.setItem('pj_pro','1');}catch(e){}
+    isPro=true;
+    document.getElementById('proMsg').style.display='none';
+    document.getElementById('proCode').value='';
+    applyProUI();
+  } else {
+    document.getElementById('proMsg').style.display='flex';
+  }
+}
+function desactivarPro(){
+  try{localStorage.removeItem('pj_pro');}catch(e){}
+  isPro=false;
+  applyProUI();
+}
+
 loadProductos();
+applyProUI();
+
+// ══════════════════════════════════════════════════════
+// ESCENARIOS (PRO)
+// ══════════════════════════════════════════════════════
+function computePrecio(costoU,pct){
+  const esRuc=(situacion==='ruc');
+  const aplicaIR=esRuc? tasaIR : 0;
+  const gan=costoU*pct/100;
+  const base=costoU+gan;
+  const sinIgv=aplicaIR>0? base/(1-(aplicaIR/100)) : base;
+  const igv=(cobIgv&&esRuc)? sinIgv*.18 : 0;
+  return {precio:sinIgv+igv, ganNeta:gan};
+}
+function compararEsc(){
+  if(!isPro){ openPro(); return; }
+  const costoU=computeCostoU();
+  const body=document.getElementById('escBody');
+  body.innerHTML='';
+  if(isNaN(costoU)||costoU<=0){
+    document.getElementById('escSub').textContent='Completa primero tu compra y tu ganancia para poder comparar.';
+  } else {
+    const base=Math.max(1,Math.round(ganPct));
+    const margenes=[Math.max(5,base-10),base,base+10];
+    const nombres=['Conservador','Tu margen','Ambicioso'];
+    document.getElementById('escSub').textContent='Tu costo real: '+fmtPEN(costoU)+' por unidad';
+    const grid=document.createElement('div'); grid.className='esc-grid';
+    margenes.forEach((m,i)=>{
+      const r=computePrecio(costoU,m);
+      const card=document.createElement('div');
+      card.className='esc-card'+(i===1?' mid':'');
+      const l=document.createElement('div'); l.className='esc-lbl'; l.textContent=nombres[i];
+      const p=document.createElement('div'); p.className='esc-pct'; p.textContent=m+'%';
+      const v=document.createElement('div'); v.className='esc-val'; v.textContent=fmtPEN(r.precio);
+      const s=document.createElement('div'); s.className='esc-sub'; s.textContent='ganas '+fmtPEN(r.ganNeta)+'/und';
+      card.append(l,p,v,s);
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  }
+  document.getElementById('escModal').style.display='flex';
+}
+function closeEsc(){ document.getElementById('escModal').style.display='none'; }
+
+// ══════════════════════════════════════════════════════
+// EXPORTAR PDF (PRO) — vía impresión del navegador, sin librerías
+// ══════════════════════════════════════════════════════
+function exportPDF(){
+  if(!isPro){ openPro(); return; }
+  if(!productos.length) return;
+  document.getElementById('psFecha').textContent='Generada el '+new Date().toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'});
+  const tb=document.getElementById('psBody');
+  tb.innerHTML='';
+  productos.forEach(p=>{
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td'); td1.textContent=p.nom;
+    const td2=document.createElement('td'); td2.textContent=p.detalle;
+    const td3=document.createElement('td'); td3.className='ps-precio'; td3.textContent=p.precio;
+    tr.append(td1,td2,td3);
+    tb.appendChild(tr);
+  });
+  window.print();
+}
 
 // ══════════════════════════════════════════════════════
 // MODAL PRO

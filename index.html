@@ -176,7 +176,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* Hoja de impresión (PDF) */
 #printSheet{display:none}
 @media print{
-  .nav,.ad-bar,.tabs-bar,.cnt,#proModal,#escModal,#pdfModal{display:none!important}
+  .nav,.ad-bar,.tabs-bar,.cnt,#proModal,#escModal,#pdfModal,#fbWsp{display:none!important}
   #printSheet{display:block!important}
   body{background:#fff}
 }
@@ -590,6 +590,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 </div><!-- /cnt -->
+
+<!-- Botón flotante de feedback por WhatsApp -->
+<a id="fbWsp" href="https://wa.me/51905984955?text=Hola%20%F0%9F%91%8B%20prob%C3%A9%20*Precio%20Justo*%20y%20quiero%20comentar%3A%20" target="_blank" rel="noopener" onclick="pjEvent('feedback_abierto')"
+   style="position:fixed;right:14px;bottom:14px;z-index:150;background:#25D366;color:#fff;border-radius:99px;padding:10px 15px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.25);text-decoration:none;display:flex;align-items:center;gap:5px">💬 Sugerencias</a>
 
 <!-- ══════ MODAL PRO ══════ -->
 <div id="proModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closePro()">

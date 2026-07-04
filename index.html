@@ -208,7 +208,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </nav>
 
 <div class="ad-bar" id="adBar">
-  <span>📢 <strong>Publicidad:</strong> Caja Huancayo — Crédito para tu negocio desde 12% anual</span>
+  <span>📢 <strong>Espacio publicitario:</strong> ¿quieres que miles de bodegueros vean tu marca? <a href="mailto:auditmarkthub@gmail.com?subject=Publicidad%20en%20Precio%20Justo" style="color:#5A4600;font-weight:700">Escríbenos</a></span>
   <button class="ad-x" onclick="this.parentElement.style.display='none'">×</button>
 </div>
 
@@ -585,7 +585,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div style="text-align:center;padding:18px 24px 8px;font-size:10px;color:var(--muted);line-height:1.6">
   Precio Justo es una herramienta de cálculo referencial y educativa.<br>
-  No constituye asesoría tributaria, contable ni legal. Tasas vigentes: IGV 18%, IR pago a cuenta RMT 1% / RER-RG 1,5%.
+  No constituye asesoría tributaria, contable ni legal. Tasas vigentes: IGV 18%, IR pago a cuenta RMT 1% / RER-RG 1,5%.<br>
+  <a href="privacidad.html" style="color:var(--muted)">Política de privacidad</a> · <a href="terminos.html" style="color:var(--muted)">Términos de uso</a> · <a href="mailto:auditmarkthub@gmail.com" style="color:var(--muted)">Contacto</a>
 </div>
 
 </div><!-- /cnt -->
@@ -606,7 +607,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="alert ay mt10" style="text-align:left"><span>🚧</span><span>Estamos activando los pagos. Muy pronto disponible — tus productos guardados te estarán esperando.</span></div>
       <div class="sec-lbl" style="text-align:left">¿Tienes un código de activación?</div>
       <div style="display:flex;gap:7px">
-        <input class="inp" id="proCode" type="text" placeholder="CÓDIGO" style="padding-left:12px;text-transform:uppercase;font-size:14px" onkeydown="if(event.key==='Enter')activarPro()">
+        <input class="inp" id="proCode" type="text" placeholder="PJ-XXXX-XXXX" style="padding-left:12px;text-transform:uppercase;font-size:14px" onkeydown="if(event.key==='Enter')activarPro()">
         <button class="btn btn-gn" style="width:auto;padding:11px 16px" onclick="activarPro()">Activar</button>
       </div>
       <div id="proMsg" class="alert ar mt8" style="display:none;text-align:left"><span>❌</span><span>Código no válido. Verifica e intenta de nuevo.</span></div>
@@ -1109,6 +1110,7 @@ function calcP(){
 
   document.getElementById('resultBox').style.display='block';
   document.getElementById('espera').style.display='none';
+  if(!window._evCalc){ window._evCalc=true; pjEvent('calculo_completado',{situacion:situacion}); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1163,6 +1165,7 @@ function compartirWsp(){
   let txt='📋 *Mi lista de precios*\n\n';
   productos.forEach(p=>{ txt+='• '+p.nom+' — *'+p.precio+'*\n'; });
   txt+='\n🧮 Calculado con Precio Justo';
+  pjEvent('lista_compartida_whatsapp',{productos:productos.length});
   window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
 }
 
@@ -1204,6 +1207,7 @@ function guardar(){
   });
   persistProductos();
   renderProductos();
+  pjEvent('producto_guardado',{total:productos.length});
 
   const btn=document.getElementById('btnGuardar');
   btn.textContent='✅ ¡Guardado!';
@@ -1213,15 +1217,30 @@ function guardar(){
 }
 
 // ══════════════════════════════════════════════════════
-// PRO: activación por código (PRODEMO) o URL ?pro=1
-// El mismo mecanismo sirve para el cobro manual por Yape:
-// cliente paga → recibe su código → activa en su dispositivo.
+// ANALYTICS (GA4) — pega tu ID de medición (G-XXXXXXXXXX) en PJ_GA_ID
+// y los eventos empiezan a registrarse solos. Sin ID, no carga nada.
 // ══════════════════════════════════════════════════════
+const PJ_GA_ID='';
+if(PJ_GA_ID){
+  const gs=document.createElement('script');
+  gs.async=true; gs.src='https://www.googletagmanager.com/gtag/js?id='+PJ_GA_ID;
+  document.head.appendChild(gs);
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){dataLayer.push(arguments);};
+  gtag('js',new Date()); gtag('config',PJ_GA_ID);
+}
+function pjEvent(nombre,params){ if(window.gtag) gtag('event',nombre,params||{}); }
+
+// ══════════════════════════════════════════════════════
+// PRO: activación por código único (venta manual por Yape:
+// cliente paga → le envías un código del CSV → activa aquí).
+// Solo viven los hashes SHA-256 (16 hex) — los códigos en texto
+// plano están en el CSV privado, NUNCA en este repo público.
+// ══════════════════════════════════════════════════════
+const PRO_HASHES=['f159b1bd46cc689d','47fa644661e3c7bb','a9b72970fbf82fbb','5bc3cbf614fa2c88','cfb94b7fbb257506','e2d2a1539ea6491b','bb89f249465ab31f','da6915f988e8b171','caedeab98d7a0531','a77ba9c6dea53b4f','12df8c121aaed89a','c5eca322e454f9d3','2b3b4cf534eb7d2e','226a79a4520a8bbb','6c04304468f4b3fb','92b9c634b2f31fde','03c2be8f03d41db4','9d1324b43ec832c6','e8e7cc9a6712ab5e','399fe3d02060d5e1','e037aaacee8f2da7','c16a8effd27cceaa','2ce18517a4246aae','d7181db0d61bdf12','f673e62ade993361','98900710eb4dc72a','b7ba91a16a4a1b0e','5882ce0a113dc1fd','20425a1d44f9e0bb','c9c26b9aa6d03191','097370a1a800b71f','e1be2c6e56713162','2fe4b8e3ce8c934a','7076ecf682ecdc89','f8e2dceb910ed15d','5a55b1e9e2baf031','eac23561e5d27343','abb32b3ccc0f2500','2d6f9f04d05ed122','72b809e22648c8bf','d16083151928e443','ac40b748de819403','b82892379e3c91f7','d3fd3b9e07b1cf8c','a77bb7d80daefa00','69811f1143da9432','9c5c0b8de3083e3f','f842716bd8678020','7cc55bd867b858d0','ff5b81d951fd85ff','051eaef7fa45068e','635003dc1c07d243','37af5dc775873f81','da2050074d375c25','c2bec7d640ebf07d','38aea6344213bcff','16f45ec86b686b4a','df79cbe5d2943376','4b74f01776d41064','324a1d6cd204cd71','fe2fab1b5b90bfca','e867b5fbb1e1dfc0','f5b488c019215060','037aab8c5a3df49d','c4f26007a1d68864','52ca44915f3c2e59','df000520a26619d9','c9eb66d4a218eb1e','b5fe2c1afcc34674','4f606181fa943023','ebbb88de8f5b783c','c968b2a009f8fad2','e501bbf4f66f1d11','168bdeae7238c41f','51cc47cb31517bc5','1b95dce134576690','3a30faba030cde07','10b84d7c60ef6629','fbad6c1b6a3edcc4','c13c86410aa2ddc2','670ef0d751854622','b4b4828555ed5c0f','e6507b8f9e8da819','9c8d677d4d4cf54f','48f95770216a57d3','00ddd86a0f88fd91','1c81e72039b413b6','2e31102e967a9df3','f94e8dcb0af06777','8d2b393c74c7676a','41dc4dbedebcbce7','05fbcb2871c96dce','e13436a57f58e029','67e95f9ad5694848','d79de311cb9c4a3a','8a03f8390a487068','a1ec29a964fc26b9','a90eea466bab5f72','92fbd1a06f1bbdb1','6d0a21513b47e2b6'];
+
 let isPro=false;
-try{
-  if(new URLSearchParams(location.search).get('pro')==='1') localStorage.setItem('pj_pro','1');
-  isPro=localStorage.getItem('pj_pro')==='1';
-}catch(e){}
+try{ isPro=localStorage.getItem('pj_pro')==='1'; }catch(e){}
 
 function applyProUI(){
   const nav=document.getElementById('btnProNav');
@@ -1234,16 +1253,28 @@ function applyProUI(){
   document.getElementById('proActivo').style.display=isPro?'block':'none';
   renderProductos();
 }
-function activarPro(){
+async function activarPro(){
   const code=(document.getElementById('proCode').value||'').trim().toUpperCase();
-  if(code==='PRODEMO'){
+  const msg=document.getElementById('proMsg');
+  const msgTxt=msg.querySelector('span:last-child');
+  if(!code){ msgTxt.textContent='Escribe tu código de activación.'; msg.style.display='flex'; return; }
+  if(!(window.crypto&&crypto.subtle)){
+    // file:// no es contexto seguro — la activación vive en la web oficial
+    msgTxt.textContent='Para activar tu código abre la app desde el enlace oficial (versión web).';
+    msg.style.display='flex'; return;
+  }
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(code));
+  const hex=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
+  if(PRO_HASHES.includes(hex)){
     try{localStorage.setItem('pj_pro','1');}catch(e){}
     isPro=true;
-    document.getElementById('proMsg').style.display='none';
+    msg.style.display='none';
     document.getElementById('proCode').value='';
+    pjEvent('pro_activado');
     applyProUI();
   } else {
-    document.getElementById('proMsg').style.display='flex';
+    msgTxt.textContent='Código no válido. Verifica e intenta de nuevo.';
+    msg.style.display='flex';
   }
 }
 function desactivarPro(){
@@ -1377,6 +1408,7 @@ function exportPDF(modo){
     document.getElementById('psNota').textContent='Documento privado de tu negocio — no lo pegues en la tienda · Generado con Precio Justo by Audit Markt Hub';
   }
   closePdf();
+  pjEvent('pdf_exportado',{modo:modo});
   window.print();
 }
 

@@ -1,9 +1,11 @@
 // Service worker de Precio Justo — funciona sin internet (mercados con mala señal)
-const CACHE = 'preciojusto-v1';
+const CACHE = 'preciojusto-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './privacidad.html',
+  './terminos.html',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];

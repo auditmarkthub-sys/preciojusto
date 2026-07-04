@@ -337,33 +337,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
 
-      <!-- Por peso -->
+      <!-- Por peso: todo se piensa en kilos, sin unidades -->
       <div id="mKg" style="display:none">
         <div class="alert ab" style="margin-bottom:9px">
-          <span>📐</span><span>Ingresa cantidad, peso por unidad y precio por kilo — calculamos el costo total.</span>
+          <span>📐</span><span>Ingresa cuántos kilos compraste y a cuánto el kilo — todo tu cálculo saldrá por kilo.</span>
         </div>
-        <div class="three-col">
+        <div class="two-col">
           <div class="field" style="margin-bottom:0">
-            <label class="fl"># Unidades</label>
-            <div class="iw"><span class="pfx" style="font-size:11px">#</span>
-              <input class="inp" id="kUnd" type="text" inputmode="numeric" placeholder="50" oninput="calcKg()" style="padding-left:22px">
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label class="fl">Kg / unidad</label>
+            <label class="fl">Kilos totales comprados</label>
             <div class="iw"><span class="pfx" style="font-size:11px">kg</span>
-              <input class="inp" id="kPeso" type="text" inputmode="decimal" placeholder="2,8" oninput="calcKg()" style="padding-left:28px">
+              <input class="inp" id="kTotKg" type="text" inputmode="decimal" placeholder="140" oninput="calcKg()" style="padding-left:30px">
             </div>
           </div>
           <div class="field" style="margin-bottom:0">
-            <label class="fl">S/ por kilo</label>
+            <label class="fl">S/ por kilo (compra)</label>
             <div class="iw"><span class="pfx">S/</span>
               <input class="inp" id="kPxkg" type="text" inputmode="decimal" placeholder="5,50" oninput="calcKg()">
             </div>
           </div>
         </div>
-        <div id="kgRes" style="display:none;background:var(--verde-light);border:1.5px solid #A0E8C8;border-radius:var(--rs);padding:9px 12px;display:none;justify-content:space-between;align-items:center;margin-top:8px">
-          <span style="font-size:12px;color:var(--verde-dark)">Peso total: <strong id="kgTkg">—</strong> · Costo total:</span>
+        <div id="kgRes" style="display:none;background:var(--verde-light);border:1.5px solid #A0E8C8;border-radius:var(--rs);padding:9px 12px;justify-content:space-between;align-items:center;margin-top:8px">
+          <span style="font-size:12px;color:var(--verde-dark)">Costo total de la compra:</span>
           <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--verde-dark)" id="kgCT">S/ —</span>
         </div>
       </div>
@@ -373,18 +367,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <!-- Para inf: solo costo unitario -->
         <div id="costoInf" class="costo-box">
           <div class="cb-row">
-            <span class="cb-lbl">Costo real por unidad</span>
+            <span class="cb-lbl" id="ciLbl">Costo real por unidad</span>
             <span class="cb-val bl" id="ciCostoU">—</span>
-          </div>
-          <div class="cb-row" id="ciKiloRow" style="display:none">
-            <span class="cb-lbl">Costo real por kilo</span>
-            <span class="cb-val bl" id="ciCostoKg">—</span>
           </div>
         </div>
         <!-- Para ruc: subtotal / igv / total pagado -->
         <div id="costoRuc" class="costo-box">
           <div class="cb-row">
-            <span class="cb-lbl">Total pagado por unidad <span class="tip" data-t="Lo que desembolsaste incluyendo el IGV">?</span></span>
+            <span class="cb-lbl"><span id="crTotalLbl">Total pagado por unidad</span> <span class="tip" data-t="Lo que desembolsaste incluyendo el IGV">?</span></span>
             <span class="cb-val" id="crTotal">—</span>
           </div>
           <div class="cb-row" id="crIgvRow">
@@ -394,10 +384,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="cb-row" id="crSubRow">
             <span class="cb-lbl">Subtotal (tu costo real) <span class="tip" data-t="La base imponible — lo que realmente sale de tu ganancia">?</span></span>
             <span class="cb-val gn" id="crSub">—</span>
-          </div>
-          <div class="cb-row" id="crKiloRow" style="display:none">
-            <span class="cb-lbl">Costo real por kilo</span>
-            <span class="cb-val gn" id="crCostoKg">—</span>
           </div>
         </div>
       </div>
@@ -471,7 +457,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
       <!-- Modo S/ -->
       <div id="gSol" style="display:none">
-        <label class="fl">Ganancia deseada por unidad</label>
+        <label class="fl" id="lblSol">Ganancia deseada por unidad</label>
         <div class="inp-pair">
           <div class="iw"><span class="pfx">S/</span>
             <input class="inp" id="iSol" type="text" inputmode="decimal" placeholder="0,00" oninput="solC()">
@@ -482,7 +468,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
       <!-- Modo precio directo -->
       <div id="gPre" style="display:none">
-        <label class="fl">¿A cuánto lo vas a vender? (precio al cliente por unidad)</label>
+        <label class="fl" id="lblPre">¿A cuánto lo vas a vender? (precio al cliente por unidad)</label>
         <div class="inp-pair">
           <div class="iw"><span class="pfx">S/</span>
             <input class="inp" id="iPre" type="text" inputmode="decimal" placeholder="0,00" oninput="calcP()">
@@ -521,7 +507,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="res-table">
           <div class="res-thead">
             <span class="res-th" style="text-align:left">Concepto</span>
-            <span class="res-th">Por unidad</span>
+            <span class="res-th" id="thUnit">Por unidad</span>
             <span class="res-th">Total lote</span>
           </div>
           <div class="res-tr">
@@ -807,33 +793,38 @@ function setTipo(t){
   document.getElementById('tK').classList.toggle('act',t==='kg');
   document.getElementById('mUnd').style.display=t==='und'?'block':'none';
   document.getElementById('mKg').style.display=t==='kg'?'block':'none';
+  // Toda la app habla en la medida elegida: unidad o kilo
+  const u=t==='kg'?'kilo':'unidad';
+  document.getElementById('ciLbl').textContent='Costo real por '+u;
+  document.getElementById('crTotalLbl').textContent='Total pagado por '+u;
+  document.getElementById('thUnit').textContent='Por '+u;
+  document.getElementById('lblSol').textContent='Ganancia deseada por '+u;
+  document.getElementById('lblPre').textContent='¿A cuánto lo vas a vender? (precio al cliente por '+u+')';
   calcP();
 }
 function calcKg(){
-  const u=parse(document.getElementById('kUnd').value)||0;
-  const p=parse(document.getElementById('kPeso').value)||0;
+  const tk=parse(document.getElementById('kTotKg').value)||0;
   const px=parse(document.getElementById('kPxkg').value)||0;
-  const tk=u*p, ct=tk*px;
   const res=document.getElementById('kgRes');
-  if(u>0&&p>0&&px>0){
-    document.getElementById('kgTkg').textContent=fmtKg(tk);
-    document.getElementById('kgCT').textContent=fmtPEN(ct);
+  if(tk>0&&px>0){
+    document.getElementById('kgCT').textContent=fmtPEN(tk*px);
     res.style.display='flex';
   } else { res.style.display='none'; }
   calcP();
 }
 function getLote(){
   if(tipoProd==='kg'){
-    const u=parse(document.getElementById('kUnd').value)||0;
-    const p=parse(document.getElementById('kPeso').value)||0;
+    const tk=parse(document.getElementById('kTotKg').value)||0;
     const px=parse(document.getElementById('kPxkg').value)||0;
-    return u*p*px;
+    return tk*px;
   }
   return parse(document.getElementById('pLote').value)||0;
 }
+// En modo kilo la "unidad" de todo el cálculo ES el kilo:
+// costo, ganancia, precio y escenarios salen por kilo automáticamente.
 function getUnid(){
   return tipoProd==='kg'?
-    (parse(document.getElementById('kUnd').value)||0):
+    (parse(document.getElementById('kTotKg').value)||0):
     (parse(document.getElementById('pUnid').value)||0);
 }
 
@@ -999,16 +990,9 @@ function calcP(){
     document.getElementById('ciCostoU').textContent=fmtPEN(costoU);
   }
 
-  // Por peso/kilo: quien compra por kilo vende por kilo — mostramos ambos costos
+  // En modo kilo, costoU/ganancia/precio ya son POR KILO (unid = kilos totales)
   const esKg=(tipoProd==='kg');
-  const kgU=esKg? (parse(document.getElementById('kPeso').value)||0) : 0;
-  const costoKilo=(esKg&&kgU>0)? costoU/kgU : 0;
-  document.getElementById('ciKiloRow').style.display=(esKg&&kgU>0&&!esRuc)?'flex':'none';
-  document.getElementById('crKiloRow').style.display=(esKg&&kgU>0&&esRuc)?'flex':'none';
-  if(esKg&&kgU>0){
-    document.getElementById('ciCostoKg').textContent=fmtPEN(costoKilo);
-    document.getElementById('crCostoKg').textContent=fmtPEN(costoKilo);
-  }
+  const uTxt=esKg?'kilo':'unidad';
 
   // IR aplica solo con RUC
   const aplicaIR=esRuc? tasaIR : 0;
@@ -1076,37 +1060,29 @@ function calcP(){
     document.getElementById('tNT').className='res-tc '+(ganSoles<0?'rd':'gn');
   }
 
-  // Hero: en modo kilo el precio protagonista es el del KILO
-  const precioKilo=(esKg&&kgU>0)? precioFinal/kgU : 0;
-  const precioHero=(esKg&&kgU>0)? precioKilo : precioFinal;
-  const unidadTxt=(esKg&&kgU>0)?'kilo':'unidad';
-  let heroLbl=modoGan==='pre'?'Tu precio de venta':'Precio de venta recomendado';
-  heroLbl+=(esKg&&kgU>0)?' — POR KILO':(' por '+unidadTxt);
+  // Hero (por kilo o por unidad según la medida elegida)
+  let heroLbl=(modoGan==='pre'?'Tu precio de venta':'Precio de venta recomendado')+' por '+uTxt;
   let heroSub='';
   if(esRuc){
     const partes=['Ganancia'];
     if(tasaIR>0) partes.push('IR');
     if(igvVenta>0) partes.push('IGV');
-    heroLbl='Precio por '+unidadTxt+' al cliente (con '+partes.join(' + ')+')';
+    heroLbl='Precio por '+uTxt+' al cliente (con '+partes.join(' + ')+')';
     if(igvVenta>0){
-      heroSub='Subtotal '+fmtPEN(precioSinIgv)+' + IGV '+fmtPEN(igvVenta)+' (por unidad)';
+      heroSub='Subtotal '+fmtPEN(precioSinIgv)+' + IGV '+fmtPEN(igvVenta)+' por '+uTxt;
     } else if(tasaIR>0){
-      heroSub='Incluye IR pago a cuenta '+fmtPEN(irMonto)+' (por unidad)';
+      heroSub='Incluye IR pago a cuenta '+fmtPEN(irMonto)+' por '+uTxt;
     }
-  }
-  if(esKg&&kgU>0){
-    heroSub='Unidad entera ('+fmtN(kgU)+' kg): '+fmtPEN(precioFinal)+(heroSub?' · '+heroSub:'');
   }
   document.getElementById('heroLbl').textContent=heroLbl;
   document.getElementById('heroSub').textContent=heroSub;
-  document.getElementById('heroVal').textContent=fmtPEN(precioHero)+((esKg&&kgU>0)?' /kg':'');
+  document.getElementById('heroVal').textContent=fmtPEN(precioFinal)+(esKg?' /kg':'');
 
-  // Precio de calle: redondeo a 10 céntimos sobre el precio protagonista
-  const calle=Math.ceil((precioHero-1e-9)*10)/10;
+  // Precio de calle: redondeo a 10 céntimos
+  const calle=Math.ceil((precioFinal-1e-9)*10)/10;
   const heroCalleEl=document.getElementById('heroCalle');
-  if(calle-precioHero>0.001){
-    const cantidadTotal=(esKg&&kgU>0)? unid*kgU : unid; // kilos totales o unidades totales
-    heroCalleEl.textContent='💡 Precio de calle: cobra '+fmtPEN(calle)+' por '+unidadTxt+' y ganas '+fmtPEN(calle-precioHero)+' más por '+unidadTxt+' ('+fmtPEN((calle-precioHero)*cantidadTotal)+' extra en el lote)';
+  if(calle-precioFinal>0.001){
+    heroCalleEl.textContent='💡 Precio de calle: cobra '+fmtPEN(calle)+' por '+uTxt+' y ganas '+fmtPEN(calle-precioFinal)+' más por '+uTxt+' ('+fmtPEN((calle-precioFinal)*unid)+' extra en el lote)';
     heroCalleEl.style.display='block';
   } else {
     heroCalleEl.style.display='none';
@@ -1119,7 +1095,7 @@ function calcP(){
   if(ganSoles<0){
     alertEl.classList.add('ar');
     document.getElementById('alertIco').textContent='🚨';
-    document.getElementById('alertTxt').textContent='Con este precio PIERDES '+fmtPEN(-ganSoles)+' por unidad ('+fmtPEN(-ganSoles*unid)+' en todo el lote). Para no perder, vende a más de '+fmtPEN(computePrecio(costoU,0).precio)+'.';
+    document.getElementById('alertTxt').textContent='Con este precio PIERDES '+fmtPEN(-ganSoles)+' por '+uTxt+' ('+fmtPEN(-ganSoles*unid)+' en todo el lote). Para no perder, vende a más de '+fmtPEN(computePrecio(costoU,0).precio)+'.';
   } else if(ganPct<15){
     alertEl.classList.add('ar');
     document.getElementById('alertIco').textContent='⚠️';
@@ -1227,17 +1203,15 @@ function guardar(){
   const unid=getUnid();
   const irLabel=aplicaIR>0?' · IR '+aplicaIR+'%':'';
   const fecha=new Date().toLocaleDateString('es-PE',{day:'numeric',month:'short'});
-  // Por kilo: el precio que se guarda y comparte es el del kilo
+  // En modo kilo, unid son los kilos totales y todos los montos son por kilo
   const esKg=(tipoProd==='kg');
-  const kgU=esKg? (parse(document.getElementById('kPeso').value)||0) : 0;
-  const precioKilo=(esKg&&kgU>0)? precioFinal/kgU : 0;
 
   productos.push({
     nom:nom,
-    detalle:unid+' uds'+((esKg&&kgU>0)?' de '+fmtN(kgU)+' kg (und: '+fmtPEN(precioFinal)+')':'')+' · margen '+ganPct.toFixed(0)+'% · '+(situacion||'').toUpperCase()+irLabel+' · '+fecha,
-    precio:(esKg&&kgU>0)? fmtPEN(precioKilo)+' /kg' : fmtPEN(precioFinal),
+    detalle:(esKg? fmtN(unid)+' kg' : unid+' uds')+' · margen '+ganPct.toFixed(0)+'% · '+(situacion||'').toUpperCase()+irLabel+' · '+fecha,
+    precio:fmtPEN(precioFinal)+(esKg?' /kg':''),
     // Números crudos para el reporte privado (los strings de arriba son para la UI)
-    n:{unid:unid, costoU:costoU, gan:ganSoles, margen:ganPct, precioNum:precioFinal, fecha:fecha, kgU:kgU, precioKilo:precioKilo}
+    n:{unid:unid, medida:esKg?'kg':'und', costoU:costoU, gan:ganSoles, margen:ganPct, precioNum:precioFinal, fecha:fecha}
   });
   persistProductos();
   renderProductos();
@@ -1343,12 +1317,10 @@ function compararEsc(){
     const base=Math.max(1,Math.round(ganPct));
     const margenes=[Math.max(5,base-10),base,base+10];
     const nombres=['Conservador','Tu margen','Ambicioso'];
-    // En modo kilo, los escenarios se muestran por kilo (así se vende)
+    // En modo kilo, costoU y los precios ya son por kilo
     const esKg=(tipoProd==='kg');
-    const kgU=esKg? (parse(document.getElementById('kPeso').value)||0) : 0;
-    const div=(esKg&&kgU>0)? kgU : 1;
-    const sufijo=(esKg&&kgU>0)?'/kg':'/und';
-    document.getElementById('escSub').textContent='Tu costo real: '+fmtPEN(costoU/div)+' por '+((esKg&&kgU>0)?'kilo':'unidad');
+    const sufijo=esKg?'/kg':'/und';
+    document.getElementById('escSub').textContent='Tu costo real: '+fmtPEN(costoU)+' por '+(esKg?'kilo':'unidad');
     const grid=document.createElement('div'); grid.className='esc-grid';
     margenes.forEach((m,i)=>{
       const r=computePrecio(costoU,m);
@@ -1356,8 +1328,8 @@ function compararEsc(){
       card.className='esc-card'+(i===1?' mid':'');
       const l=document.createElement('div'); l.className='esc-lbl'; l.textContent=nombres[i];
       const p=document.createElement('div'); p.className='esc-pct'; p.textContent=m+'%';
-      const v=document.createElement('div'); v.className='esc-val'; v.textContent=fmtPEN(r.precio/div);
-      const s=document.createElement('div'); s.className='esc-sub'; s.textContent='ganas '+fmtPEN(r.ganNeta/div)+sufijo;
+      const v=document.createElement('div'); v.className='esc-val'; v.textContent=fmtPEN(r.precio)+(esKg?'/kg':'');
+      const s=document.createElement('div'); s.className='esc-sub'; s.textContent='ganas '+fmtPEN(r.ganNeta)+sufijo;
       card.append(l,p,v,s);
       grid.appendChild(card);
     });
@@ -1414,16 +1386,17 @@ function exportPDF(modo){
     resumen.style.display='none';
     document.getElementById('psNota').textContent='Precios sujetos a cambio · Hecho con Precio Justo';
   } else {
-    ['Producto','Uds','Costo/und','Precio venta','Gano/und','Margen','Gano en el lote'].forEach(th);
+    ['Producto','Cantidad','Costo','Precio venta','Ganancia','Margen','Gano en el lote'].forEach(th);
     let inv=0,venta=0,gan=0,antiguos=0;
     productos.forEach(p=>{
       const tr=document.createElement('tr');
       td(tr,p.nom);
       if(p.n){
-        td(tr,String(p.n.unid),'ps-num');
-        td(tr,fmtPEN(p.n.costoU),'ps-num');
-        td(tr,fmtPEN(p.n.precioNum),'ps-precio');
-        td(tr,fmtPEN(p.n.gan),'ps-num');
+        const esKgP=(p.n.medida==='kg');
+        td(tr,esKgP? fmtN(p.n.unid)+' kg' : String(p.n.unid)+' und','ps-num');
+        td(tr,fmtPEN(p.n.costoU)+(esKgP?'/kg':''),'ps-num');
+        td(tr,fmtPEN(p.n.precioNum)+(esKgP?'/kg':''),'ps-precio');
+        td(tr,fmtPEN(p.n.gan)+(esKgP?'/kg':''),'ps-num');
         td(tr,p.n.margen.toFixed(0)+'%','ps-num');
         td(tr,fmtPEN(p.n.gan*p.n.unid),'ps-precio');
         inv+=p.n.costoU*p.n.unid; venta+=p.n.precioNum*p.n.unid; gan+=p.n.gan*p.n.unid;

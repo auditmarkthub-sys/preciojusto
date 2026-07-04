@@ -376,6 +376,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <span class="cb-lbl">Costo real por unidad</span>
             <span class="cb-val bl" id="ciCostoU">—</span>
           </div>
+          <div class="cb-row" id="ciKiloRow" style="display:none">
+            <span class="cb-lbl">Costo real por kilo</span>
+            <span class="cb-val bl" id="ciCostoKg">—</span>
+          </div>
         </div>
         <!-- Para ruc: subtotal / igv / total pagado -->
         <div id="costoRuc" class="costo-box">
@@ -390,6 +394,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="cb-row" id="crSubRow">
             <span class="cb-lbl">Subtotal (tu costo real) <span class="tip" data-t="La base imponible — lo que realmente sale de tu ganancia">?</span></span>
             <span class="cb-val gn" id="crSub">—</span>
+          </div>
+          <div class="cb-row" id="crKiloRow" style="display:none">
+            <span class="cb-lbl">Costo real por kilo</span>
+            <span class="cb-val gn" id="crCostoKg">—</span>
           </div>
         </div>
       </div>
@@ -991,6 +999,17 @@ function calcP(){
     document.getElementById('ciCostoU').textContent=fmtPEN(costoU);
   }
 
+  // Por peso/kilo: quien compra por kilo vende por kilo — mostramos ambos costos
+  const esKg=(tipoProd==='kg');
+  const kgU=esKg? (parse(document.getElementById('kPeso').value)||0) : 0;
+  const costoKilo=(esKg&&kgU>0)? costoU/kgU : 0;
+  document.getElementById('ciKiloRow').style.display=(esKg&&kgU>0&&!esRuc)?'flex':'none';
+  document.getElementById('crKiloRow').style.display=(esKg&&kgU>0&&esRuc)?'flex':'none';
+  if(esKg&&kgU>0){
+    document.getElementById('ciCostoKg').textContent=fmtPEN(costoKilo);
+    document.getElementById('crCostoKg').textContent=fmtPEN(costoKilo);
+  }
+
   // IR aplica solo con RUC
   const aplicaIR=esRuc? tasaIR : 0;
 
@@ -1057,30 +1076,37 @@ function calcP(){
     document.getElementById('tNT').className='res-tc '+(ganSoles<0?'rd':'gn');
   }
 
-  // Hero
-  let heroLbl=modoGan==='pre'?'Tu precio de venta':'Precio unitario de venta recomendado';
+  // Hero: en modo kilo el precio protagonista es el del KILO
+  const precioKilo=(esKg&&kgU>0)? precioFinal/kgU : 0;
+  const precioHero=(esKg&&kgU>0)? precioKilo : precioFinal;
+  const unidadTxt=(esKg&&kgU>0)?'kilo':'unidad';
+  let heroLbl=modoGan==='pre'?'Tu precio de venta':'Precio de venta recomendado';
+  heroLbl+=(esKg&&kgU>0)?' — POR KILO':(' por '+unidadTxt);
   let heroSub='';
   if(esRuc){
-    const partes=[];
-    partes.push('Ganancia');
+    const partes=['Ganancia'];
     if(tasaIR>0) partes.push('IR');
     if(igvVenta>0) partes.push('IGV');
-    heroLbl='Precio al cliente (con '+partes.join(' + ')+')';
+    heroLbl='Precio por '+unidadTxt+' al cliente (con '+partes.join(' + ')+')';
     if(igvVenta>0){
-      heroSub='Subtotal '+fmtPEN(precioSinIgv)+' + IGV '+fmtPEN(igvVenta);
+      heroSub='Subtotal '+fmtPEN(precioSinIgv)+' + IGV '+fmtPEN(igvVenta)+' (por unidad)';
     } else if(tasaIR>0){
-      heroSub='Incluye IR pago a cuenta '+fmtPEN(irMonto);
+      heroSub='Incluye IR pago a cuenta '+fmtPEN(irMonto)+' (por unidad)';
     }
+  }
+  if(esKg&&kgU>0){
+    heroSub='Unidad entera ('+fmtN(kgU)+' kg): '+fmtPEN(precioFinal)+(heroSub?' · '+heroSub:'');
   }
   document.getElementById('heroLbl').textContent=heroLbl;
   document.getElementById('heroSub').textContent=heroSub;
-  document.getElementById('heroVal').textContent=fmtPEN(precioFinal);
+  document.getElementById('heroVal').textContent=fmtPEN(precioHero)+((esKg&&kgU>0)?' /kg':'');
 
-  // Precio de calle: nadie cobra S/ 16,17 — sugerimos redondear a 10 céntimos
-  const calle=Math.ceil((precioFinal-1e-9)*10)/10;
+  // Precio de calle: redondeo a 10 céntimos sobre el precio protagonista
+  const calle=Math.ceil((precioHero-1e-9)*10)/10;
   const heroCalleEl=document.getElementById('heroCalle');
-  if(calle-precioFinal>0.001){
-    heroCalleEl.textContent='💡 Precio de calle: cobra '+fmtPEN(calle)+' y ganas '+fmtPEN(calle-precioFinal)+' más por unidad ('+fmtPEN((calle-precioFinal)*unid)+' extra en el lote)';
+  if(calle-precioHero>0.001){
+    const cantidadTotal=(esKg&&kgU>0)? unid*kgU : unid; // kilos totales o unidades totales
+    heroCalleEl.textContent='💡 Precio de calle: cobra '+fmtPEN(calle)+' por '+unidadTxt+' y ganas '+fmtPEN(calle-precioHero)+' más por '+unidadTxt+' ('+fmtPEN((calle-precioHero)*cantidadTotal)+' extra en el lote)';
     heroCalleEl.style.display='block';
   } else {
     heroCalleEl.style.display='none';
@@ -1201,13 +1227,17 @@ function guardar(){
   const unid=getUnid();
   const irLabel=aplicaIR>0?' · IR '+aplicaIR+'%':'';
   const fecha=new Date().toLocaleDateString('es-PE',{day:'numeric',month:'short'});
+  // Por kilo: el precio que se guarda y comparte es el del kilo
+  const esKg=(tipoProd==='kg');
+  const kgU=esKg? (parse(document.getElementById('kPeso').value)||0) : 0;
+  const precioKilo=(esKg&&kgU>0)? precioFinal/kgU : 0;
 
   productos.push({
     nom:nom,
-    detalle:unid+' uds · margen '+ganPct.toFixed(0)+'% · '+(situacion||'').toUpperCase()+irLabel+' · '+fecha,
-    precio:fmtPEN(precioFinal),
+    detalle:unid+' uds'+((esKg&&kgU>0)?' de '+fmtN(kgU)+' kg (und: '+fmtPEN(precioFinal)+')':'')+' · margen '+ganPct.toFixed(0)+'% · '+(situacion||'').toUpperCase()+irLabel+' · '+fecha,
+    precio:(esKg&&kgU>0)? fmtPEN(precioKilo)+' /kg' : fmtPEN(precioFinal),
     // Números crudos para el reporte privado (los strings de arriba son para la UI)
-    n:{unid:unid, costoU:costoU, gan:ganSoles, margen:ganPct, precioNum:precioFinal, fecha:fecha}
+    n:{unid:unid, costoU:costoU, gan:ganSoles, margen:ganPct, precioNum:precioFinal, fecha:fecha, kgU:kgU, precioKilo:precioKilo}
   });
   persistProductos();
   renderProductos();
@@ -1313,7 +1343,12 @@ function compararEsc(){
     const base=Math.max(1,Math.round(ganPct));
     const margenes=[Math.max(5,base-10),base,base+10];
     const nombres=['Conservador','Tu margen','Ambicioso'];
-    document.getElementById('escSub').textContent='Tu costo real: '+fmtPEN(costoU)+' por unidad';
+    // En modo kilo, los escenarios se muestran por kilo (así se vende)
+    const esKg=(tipoProd==='kg');
+    const kgU=esKg? (parse(document.getElementById('kPeso').value)||0) : 0;
+    const div=(esKg&&kgU>0)? kgU : 1;
+    const sufijo=(esKg&&kgU>0)?'/kg':'/und';
+    document.getElementById('escSub').textContent='Tu costo real: '+fmtPEN(costoU/div)+' por '+((esKg&&kgU>0)?'kilo':'unidad');
     const grid=document.createElement('div'); grid.className='esc-grid';
     margenes.forEach((m,i)=>{
       const r=computePrecio(costoU,m);
@@ -1321,8 +1356,8 @@ function compararEsc(){
       card.className='esc-card'+(i===1?' mid':'');
       const l=document.createElement('div'); l.className='esc-lbl'; l.textContent=nombres[i];
       const p=document.createElement('div'); p.className='esc-pct'; p.textContent=m+'%';
-      const v=document.createElement('div'); v.className='esc-val'; v.textContent=fmtPEN(r.precio);
-      const s=document.createElement('div'); s.className='esc-sub'; s.textContent='ganas '+fmtPEN(r.ganNeta)+'/und';
+      const v=document.createElement('div'); v.className='esc-val'; v.textContent=fmtPEN(r.precio/div);
+      const s=document.createElement('div'); s.className='esc-sub'; s.textContent='ganas '+fmtPEN(r.ganNeta/div)+sufijo;
       card.append(l,p,v,s);
       grid.appendChild(card);
     });

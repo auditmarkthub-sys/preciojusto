@@ -1466,6 +1466,20 @@ if('serviceWorker' in navigator && location.protocol!=='file:'){
 }
 
 // ══════════════════════════════════════════════════════
+// El botón de sugerencias se esconde mientras se escribe
+// (en celular tapaba los campos con el teclado abierto)
+// ══════════════════════════════════════════════════════
+document.addEventListener('focusin',e=>{
+  if(e.target.matches('input,textarea')) document.getElementById('fbWsp').style.display='none';
+});
+document.addEventListener('focusout',()=>{
+  setTimeout(()=>{
+    const a=document.activeElement;
+    if(!(a&&a.matches&&a.matches('input,textarea'))) document.getElementById('fbWsp').style.display='flex';
+  },150);
+});
+
+// ══════════════════════════════════════════════════════
 // TOOLTIPS TÁCTILES (en celular no existe :hover)
 // ══════════════════════════════════════════════════════
 document.addEventListener('click',function(e){

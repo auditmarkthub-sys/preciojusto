@@ -319,46 +319,57 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <button class="togb" id="tK" onclick="setTipo('kg')">Por peso / kilo</button>
       </div>
 
-      <!-- Por unidad -->
+      <!-- Por unidad: 3 campos inteligentes -->
       <div id="mUnd">
-        <div class="two-col">
+        <div class="alert ab" style="margin-bottom:9px">
+          <span>✨</span><span>Llena la cantidad y UNO de los otros dos — el tercero se calcula solo.</span>
+        </div>
+        <div class="three-col">
           <div class="field" style="margin-bottom:0">
-            <label class="fl">Costo total del lote <span class="tip" data-t="Lo que pagaste en total">?</span></label>
-            <div class="iw"><span class="pfx">S/</span>
-              <input class="inp" id="pLote" type="text" inputmode="decimal" placeholder="0,00" oninput="calcP()">
+            <label class="fl"># Unidades</label>
+            <div class="iw"><span class="pfx" style="font-size:11px">#</span>
+              <input class="inp" id="pUnid" type="text" inputmode="numeric" placeholder="24" oninput="trioC('und','n')" style="padding-left:22px">
             </div>
           </div>
           <div class="field" style="margin-bottom:0">
-            <label class="fl">Cantidad de unidades</label>
-            <div class="iw"><span class="pfx" style="font-size:12px">#</span>
-              <input class="inp" id="pUnid" type="text" inputmode="numeric" placeholder="24" oninput="calcP()" style="padding-left:24px">
+            <label class="fl">Costo por unidad</label>
+            <div class="iw"><span class="pfx">S/</span>
+              <input class="inp" id="pCostoU" type="text" inputmode="decimal" placeholder="3,50" oninput="trioC('und','unit')">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="fl">Costo del lote <span class="tip" data-t="Lo que pagaste en total por todo">?</span></label>
+            <div class="iw"><span class="pfx">S/</span>
+              <input class="inp" id="pLote" type="text" inputmode="decimal" placeholder="84,00" oninput="trioC('und','lote')">
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Por peso: todo se piensa en kilos, sin unidades -->
+      <!-- Por peso/kilo: 3 campos inteligentes, todo el cálculo sale por kilo -->
       <div id="mKg" style="display:none">
         <div class="alert ab" style="margin-bottom:9px">
-          <span>📐</span><span>Ingresa cuántos kilos compraste y a cuánto el kilo — todo tu cálculo saldrá por kilo.</span>
+          <span>✨</span><span>Llena los kilos y UNO de los otros dos — el tercero se calcula solo. Todo saldrá por kilo.</span>
         </div>
-        <div class="two-col">
+        <div class="three-col">
           <div class="field" style="margin-bottom:0">
-            <label class="fl">Kilos totales comprados</label>
+            <label class="fl">Kilos totales</label>
             <div class="iw"><span class="pfx" style="font-size:11px">kg</span>
-              <input class="inp" id="kTotKg" type="text" inputmode="decimal" placeholder="140" oninput="calcKg()" style="padding-left:30px">
+              <input class="inp" id="kTotKg" type="text" inputmode="decimal" placeholder="140" oninput="trioC('kg','n')" style="padding-left:30px">
             </div>
           </div>
           <div class="field" style="margin-bottom:0">
-            <label class="fl">S/ por kilo (compra)</label>
+            <label class="fl">Costo por kilo</label>
             <div class="iw"><span class="pfx">S/</span>
-              <input class="inp" id="kPxkg" type="text" inputmode="decimal" placeholder="5,50" oninput="calcKg()">
+              <input class="inp" id="kPxkg" type="text" inputmode="decimal" placeholder="5,50" oninput="trioC('kg','unit')">
             </div>
           </div>
-        </div>
-        <div id="kgRes" style="display:none;background:var(--verde-light);border:1.5px solid #A0E8C8;border-radius:var(--rs);padding:9px 12px;justify-content:space-between;align-items:center;margin-top:8px">
-          <span style="font-size:12px;color:var(--verde-dark)">Costo total de la compra:</span>
-          <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--verde-dark)" id="kgCT">S/ —</span>
+          <div class="field" style="margin-bottom:0">
+            <label class="fl">Costo total <span class="tip" data-t="Lo que pagaste en total por todos los kilos">?</span></label>
+            <div class="iw"><span class="pfx">S/</span>
+              <input class="inp" id="kCostoT" type="text" inputmode="decimal" placeholder="770,00" oninput="trioC('kg','lote')">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -733,12 +744,13 @@ function igvC(from){
 function usarSub(){
   if(!lastTot) return;
   goTab('precio',document.querySelectorAll('.tab-btn')[1]);
-  // El campo "Costo total del lote" espera lo que pagaste CON IGV;
+  // El campo "Costo del lote" espera lo que pagaste CON IGV;
   // con comprobante=factura la app le descuenta el IGV una sola vez.
+  setTipo('und');
   document.getElementById('pLote').value=fmtN(lastTot);
   if(!situacion) setSit('ruc');
   setComp('factura');
-  calcP();
+  trioC('und','lote'); // deriva el costo por unidad si ya hay cantidad
 }
 
 // ══════════════════════════════════════════════════════
@@ -802,30 +814,40 @@ function setTipo(t){
   document.getElementById('lblPre').textContent='¿A cuánto lo vas a vender? (precio al cliente por '+u+')';
   calcP();
 }
-function calcKg(){
-  const tk=parse(document.getElementById('kTotKg').value)||0;
-  const px=parse(document.getElementById('kPxkg').value)||0;
-  const res=document.getElementById('kgRes');
-  if(tk>0&&px>0){
-    document.getElementById('kgCT').textContent=fmtPEN(tk*px);
-    res.style.display='flex';
-  } else { res.style.display='none'; }
+// ══════════════════════════════════════════════════════
+// 3 CAMPOS INTELIGENTES (cantidad · costo unitario · costo total)
+// Llenas la cantidad y uno de los otros dos; el tercero se deriva.
+// trioSrc recuerda cuál escribió el usuario para recalcular bien
+// cuando cambia la cantidad. Ej: 24 und y S/ 3,50 → lote S/ 84,00;
+// o 24 und y lote S/ 84 → S/ 3,50 por unidad.
+// ══════════════════════════════════════════════════════
+const trioIds={und:{n:'pUnid',u:'pCostoU',t:'pLote'}, kg:{n:'kTotKg',u:'kPxkg',t:'kCostoT'}};
+const trioSrc={und:'lote', kg:'unit'};
+function trioC(modo,campo){
+  const ids=trioIds[modo];
+  if(campo==='unit'||campo==='lote') trioSrc[modo]=campo;
+  const n=parse(document.getElementById(ids.n).value)||0;
+  const uEl=document.getElementById(ids.u), tEl=document.getElementById(ids.t);
+  const u=parse(uEl.value), t=parse(tEl.value);
+  if(n>0){
+    if(campo==='unit'){ tEl.value=isNaN(u)?'':fmtN(u*n); }
+    else if(campo==='lote'){ uEl.value=isNaN(t)?'':fmtN(t/n); }
+    else { // cambió la cantidad: recalcular desde el campo que escribió el usuario
+      if(trioSrc[modo]==='unit'&&!isNaN(u)) tEl.value=fmtN(u*n);
+      else if(trioSrc[modo]==='lote'&&!isNaN(t)) uEl.value=fmtN(t/n);
+      else if(!isNaN(u)&&isNaN(t)) tEl.value=fmtN(u*n);
+      else if(!isNaN(t)&&isNaN(u)) uEl.value=fmtN(t/n);
+    }
+  }
   calcP();
 }
 function getLote(){
-  if(tipoProd==='kg'){
-    const tk=parse(document.getElementById('kTotKg').value)||0;
-    const px=parse(document.getElementById('kPxkg').value)||0;
-    return tk*px;
-  }
-  return parse(document.getElementById('pLote').value)||0;
+  return parse(document.getElementById(tipoProd==='kg'?'kCostoT':'pLote').value)||0;
 }
 // En modo kilo la "unidad" de todo el cálculo ES el kilo:
 // costo, ganancia, precio y escenarios salen por kilo automáticamente.
 function getUnid(){
-  return tipoProd==='kg'?
-    (parse(document.getElementById('kTotKg').value)||0):
-    (parse(document.getElementById('pUnid').value)||0);
+  return parse(document.getElementById(tipoProd==='kg'?'kTotKg':'pUnid').value)||0;
 }
 
 // ══════════════════════════════════════════════════════

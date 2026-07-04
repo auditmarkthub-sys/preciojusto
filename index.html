@@ -302,7 +302,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
 
-      <!-- Comprobante (solo ruc) -->
+      <!-- Producto exonerado de IGV (Apéndice I) -->
+      <div class="gastos-chk-row" onclick="setExo()" style="padding:2px 0 8px">
+        <div class="chk-box" id="chkExo"></div>
+        <span class="gastos-chk-lbl">Producto exonerado de IGV</span>
+        <span class="tip" data-t="Apéndice I de la Ley del IGV: pollo y carnes frescas, pescado, huevos, frutas, verduras, papa, menestras. No llevan IGV ni al comprar ni al vender." style="margin-left:auto">?</span>
+      </div>
+      <div id="exoMsg" class="alert ag" style="display:none;margin-bottom:10px">
+        <span>🥦</span><span>Este producto no lleva IGV ni en la compra ni en la venta (pollo, frutas, verduras, menestras, huevos y más). Si tienes RUC, el Impuesto a la Renta sí aplica sobre tus ventas.</span>
+      </div>
+
+      <!-- Comprobante (solo ruc, irrelevante si exonerado) -->
       <div id="comprobWrap">
         <div class="sec-lbl" style="margin-top:0">Comprobante de compra</div>
         <div class="tog" style="margin-bottom:11px">
@@ -758,6 +768,7 @@ function usarSub(){
 // ══════════════════════════════════════════════════════
 let situacion=null, comprobante='factura', tipoProd='und';
 let modoGan='pct', ganPct=35, cobIgv=true, tasaIR=0;
+let exonerado=false; // Apéndice I: sin IGV en compra ni venta
 let gastosVisible=false, gastoRows=[], gastoIdCnt=0;
 
 const sitMsgs={
@@ -776,11 +787,10 @@ function setSit(s){
   document.getElementById('sitMsg').style.display='flex';
 
   const esRuc=(s==='ruc');
-  // Comprobante: solo visible para ruc
-  document.getElementById('comprobWrap').style.display=esRuc?'block':'none';
-  // IR y cobrar IGV: solo ruc
+  // Comprobante e IGV de venta: solo ruc y solo si el producto NO está exonerado
+  document.getElementById('comprobWrap').style.display=(esRuc&&!exonerado)?'block':'none';
   document.getElementById('irWrap').style.display=esRuc?'block':'none';
-  document.getElementById('igvVentaWrap').style.display=esRuc?'block':'none';
+  document.getElementById('igvVentaWrap').style.display=(esRuc&&!exonerado)?'block':'none';
   // Etiqueta con factura en flete
   document.getElementById('gFleteLabel').style.display=esRuc?'flex':'none';
   // Etiquetas con factura en gastos extra
@@ -794,6 +804,18 @@ function setSit(s){
 // ══════════════════════════════════════════════════════
 // PASO 2: COMPROBANTE / TIPO / KG
 // ══════════════════════════════════════════════════════
+function setExo(){
+  exonerado=!exonerado;
+  const chk=document.getElementById('chkExo');
+  chk.textContent=exonerado?'✓':'';
+  chk.classList.toggle('chked',exonerado);
+  document.getElementById('exoMsg').style.display=exonerado?'flex':'none';
+  const esRuc=(situacion==='ruc');
+  document.getElementById('comprobWrap').style.display=(esRuc&&!exonerado)?'block':'none';
+  document.getElementById('igvVentaWrap').style.display=(esRuc&&!exonerado)?'block':'none';
+  calcP();
+}
+
 function setComp(c){
   comprobante=c;
   ['F','B','S'].forEach((x,i)=>document.getElementById('c'+x).classList.toggle('act',['factura','boleta','sin'][i]===c));
@@ -969,7 +991,7 @@ function computeCostoU(){
   const lote=getLote(), unid=getUnid();
   if(!lote||!unid||!situacion) return NaN;
   const esRuc=(situacion==='ruc');
-  const credito=esRuc&&comprobante==='factura';
+  const credito=esRuc&&comprobante==='factura'&&!exonerado;
   const costoBase=credito? lote/1.18 : lote;
   const gastos=calcGastosCosto(esRuc);
   return (costoBase+gastos)/unid;
@@ -985,7 +1007,7 @@ function calcP(){
   }
 
   const esRuc=(situacion==='ruc');
-  const credito=esRuc&&comprobante==='factura';
+  const credito=esRuc&&comprobante==='factura'&&!exonerado;
   const costoBase=credito? lote/1.18 : lote;
   const igvCompra=credito? lote-costoBase : 0;
   const gastos=calcGastosCosto(esRuc);
@@ -1036,7 +1058,7 @@ function calcP(){
       pg.textContent='= —'; pg.style.color='';
     } else {
       // Inverso exacto del cálculo de precio: quitar IGV de venta, quitar IR, restar costo
-      const sinIgv=(cobIgv&&esRuc)? pIn/1.18 : pIn;
+      const sinIgv=(cobIgv&&esRuc&&!exonerado)? pIn/1.18 : pIn;
       const baseSinIR=aplicaIR>0? sinIgv*(1-(aplicaIR/100)) : sinIgv;
       ganSoles=baseSinIR-costoU;
       ganPct=costoU>0? ganSoles/costoU*100 : 0;
@@ -1056,7 +1078,7 @@ function calcP(){
   // Con el ajuste anterior: bruta = ganancia deseada + IR, neta = ganancia deseada
   const ganBruta=ganSoles+irMonto;
 
-  const igvVenta=(cobIgv&&esRuc)? precioSinIgv*0.18 : 0;
+  const igvVenta=(cobIgv&&esRuc&&!exonerado)? precioSinIgv*0.18 : 0;
   const precioFinal=precioSinIgv+igvVenta;
 
   // Tabla (visibilidad de filas IR vive aquí, no en setIR, para que
@@ -1220,7 +1242,7 @@ function guardar(){
   const ganSoles=modoGan==='sol'? (parse(document.getElementById('iSol').value)||0) : costoU*ganPct/100;
   const precioBase=costoU+ganSoles;
   const precioSinIgv=aplicaIR>0? precioBase/(1-(aplicaIR/100)) : precioBase;
-  const igvVenta=(cobIgv&&esRuc)? precioSinIgv*.18 : 0;
+  const igvVenta=(cobIgv&&esRuc&&!exonerado)? precioSinIgv*.18 : 0;
   const precioFinal=precioSinIgv+igvVenta;
   const unid=getUnid();
   const irLabel=aplicaIR>0?' · IR '+aplicaIR+'%':'';
@@ -1233,7 +1255,7 @@ function guardar(){
     detalle:(esKg? fmtN(unid)+' kg' : unid+' uds')+' · margen '+ganPct.toFixed(0)+'% · '+(situacion||'').toUpperCase()+irLabel+' · '+fecha,
     precio:fmtPEN(precioFinal)+(esKg?' /kg':''),
     // Números crudos para el reporte privado (los strings de arriba son para la UI)
-    n:{unid:unid, medida:esKg?'kg':'und', costoU:costoU, gan:ganSoles, margen:ganPct, precioNum:precioFinal, fecha:fecha}
+    n:{unid:unid, medida:esKg?'kg':'und', costoU:costoU, gan:ganSoles, margen:ganPct, precioNum:precioFinal, fecha:fecha, exo:exonerado}
   });
   persistProductos();
   renderProductos();
@@ -1325,7 +1347,7 @@ function computePrecio(costoU,pct){
   const gan=costoU*pct/100;
   const base=costoU+gan;
   const sinIgv=aplicaIR>0? base/(1-(aplicaIR/100)) : base;
-  const igv=(cobIgv&&esRuc)? sinIgv*.18 : 0;
+  const igv=(cobIgv&&esRuc&&!exonerado)? sinIgv*.18 : 0;
   return {precio:sinIgv+igv, ganNeta:gan};
 }
 function compararEsc(){
